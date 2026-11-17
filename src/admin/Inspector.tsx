@@ -14,6 +14,7 @@ import { PALETTE, SECTION_META } from '../lib/defaults'
 import { imageSrc } from '../lib/image'
 import { uid } from '../lib/util'
 import { useEditor } from './EditorContext'
+import { WAX_COLORS, WAX_EMBLEMS, WaxSeal, normalizeEmblem } from '../invite/WaxSeal'
 import { assetToImage, CropDialog, ImageField } from './MediaLibrary'
 import { SortableList } from './SortableList'
 import { Btn, ColorInput, Group, Icon, NumberInput, Segmented, Select, Slider, TextArea, TextInput, Toggle } from './ui'
@@ -156,18 +157,43 @@ function EnvelopeEditor({ id }: { id: string }) {
         <TextInput label="안내 문구" value={s.hint} onChange={(v) => set((x) => void (x.hint = v))} />
       </Group>
       <Group title="실링왁스">
-        <ColorInput label="왁스 색상" value={s.waxColor} onChange={(v) => set((x) => void (x.waxColor = v))} presets={[PALETTE.wax, '#8E5A57', '#B8A489', '#8C9A80', '#6F6259', '#C9A0A0']} />
-        <Segmented
-          label="문양"
-          value={s.waxEmblem}
-          onChange={(v) => set((x) => void (x.waxEmblem = v))}
-          options={[
-            { value: 'initials', label: '이니셜' },
-            { value: 'heart', label: '하트' },
-            { value: 'flower', label: '꽃' },
-          ]}
-        />
-        {s.waxEmblem === 'initials' && <TextInput label="이니셜" value={s.waxInitials} onChange={(v) => set((x) => void (x.waxInitials = v))} maxLength={7} />}
+        <div>
+          <span className="mb-1.5 block text-[12px] font-medium text-stone-500">문양</span>
+          <div className="grid grid-cols-2 gap-2">
+            {WAX_EMBLEMS.map((e) => (
+              <button
+                key={e.value}
+                type="button"
+                onClick={() => set((x) => void (x.waxEmblem = e.value))}
+                className={`flex flex-col items-center gap-1 rounded-xl border p-2.5 transition ${
+                  normalizeEmblem(s.waxEmblem) === e.value ? 'border-[#8a7a66] bg-[#F4F0E8]' : 'border-stone-200 hover:bg-stone-50'
+                }`}
+              >
+                <WaxSeal settings={{ waxColor: s.waxColor, waxEmblem: e.value }} size={64} />
+                <span className="text-[11.5px] text-stone-600">{e.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <span className="mb-1.5 block text-[12px] font-medium text-stone-500">왁스 색상</span>
+          <div className="flex flex-wrap gap-2">
+            {WAX_COLORS.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                title={c.label}
+                onClick={() => set((x) => void (x.waxColor = c.value))}
+                className={`flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 text-[11.5px] text-stone-600 ${
+                  s.waxColor.toUpperCase() === c.value.toUpperCase() ? 'border-[#8a7a66] bg-[#F4F0E8]' : 'border-stone-200'
+                }`}
+              >
+                <span className="h-5 w-5 rounded-full shadow-inner" style={{ background: c.value }} />
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </Group>
       <Group title="애니메이션">
         <Slider label="열리는 속도" min={0.5} max={2} step={0.1} value={s.speed} onChange={(v) => set((x) => void (x.speed = v))} format={(n) => (n < 1 ? `느리게 ×${n}` : n > 1 ? `빠르게 ×${n}` : '기본')} />

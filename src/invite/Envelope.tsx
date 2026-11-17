@@ -65,8 +65,9 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
   }, [phase])
 
   // 클로즈업: 봉투를 화면 크기에 꼭 맞게 확대 (가로·세로 각각)
+  // 클로즈업: 봉투 비율은 그대로, 화면 가로를 가득 채우도록 확대
   const sx = closeup ? vp.w / vp.ew : 1
-  const sy = closeup ? vp.h / vp.eh : 1
+  const sy = sx
   const camX = useMotionValue(sx)
   const camY = useMotionValue(sy)
   useLayoutEffect(() => {
@@ -76,7 +77,7 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
   }, [sx, sy, phase, camX, camY])
   // 실링왁스 위치: 덮개 끝 (화면 중심 기준 세로 오프셋)
   const sealOffset = (FLAP - 0.5) * vp.eh * sy
-  const sealSize = closeup ? Math.min(vp.w * 0.46, 210) : 78
+  const sealSize = Math.round(vp.ew * sx * (closeup ? 0.3 : 0.25))
 
   async function open() {
     if (phase !== 'idle') return
@@ -110,7 +111,7 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
     onReveal()
     const d = 1.35 * k
     void animate(bg.current!, { opacity: 0 }, { duration: 0.6 * k, ease: 'easeOut' })
-    void animate(back.current!, { opacity: 0 }, { duration: 0.6 * k, ease: 'easeOut' })
+    root.current!.querySelectorAll('.env-back').forEach((el) => void animate(el, { opacity: 0 }, { duration: 0.6 * k, ease: 'easeOut' }))
     void animate(flapEl, { opacity: 0 }, { duration: 0.5 * k })
     void animate(pageY, 0, { duration: d, ease: EASE })
     await animate(pocket.current!, { y: (vh * 1.05) / Math.max(0.2, camY.get()) }, { duration: d, ease: EASE })
@@ -148,7 +149,7 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
           <p
             ref={eyebrow}
             className="eyebrow absolute inset-x-0 text-center"
-            style={{ bottom: 'calc(100% + 40px)', letterSpacing: '0.4em', opacity: closeup ? 0 : 1, whiteSpace: 'nowrap' }}
+            style={{ bottom: `calc(100% + ${closeup ? 64 : 40}px)`, letterSpacing: '0.4em', whiteSpace: 'nowrap' }}
           >
             Wedding Invitation
           </p>
@@ -156,6 +157,20 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
           {/* 카메라: 클로즈업에서는 봉투가 화면을 가득 채움 */}
           <motion.div ref={camera} style={{ scaleX: camX, scaleY: camY, transformOrigin: '50% 50%' }}>
             <div ref={env} className="relative" style={{ width: 'min(84vw, 360px)', aspectRatio: '1.46', perspective: 1400 }}>
+              {/* 바닥에 닿는 부드러운 그림자 */}
+              <div
+                aria-hidden
+                className="env-back pointer-events-none absolute"
+                style={{
+                  left: '4%',
+                  right: '4%',
+                  bottom: '-9%',
+                  height: '22%',
+                  background: 'radial-gradient(50% 50% at 50% 50%, rgba(81,74,67,.20), rgba(81,74,67,0) 100%)',
+                  filter: 'blur(8px)',
+                  zIndex: 0,
+                }}
+              />
               {/* 뒷면 + 안쪽 라이닝 */}
               <div
                 ref={back}
@@ -163,7 +178,7 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
                 style={{
                   backgroundColor: s.envelopeColor,
                   borderRadius: 6,
-                  boxShadow: '0 30px 60px -30px rgba(81,74,67,.35), 0 2px 6px rgba(81,74,67,.06)',
+                  boxShadow: '0 1px 2px rgba(81,74,67,.06), 0 6px 14px -8px rgba(81,74,67,.14)',
                   zIndex: 0,
                 }}
               >

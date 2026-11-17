@@ -56,8 +56,7 @@ export interface EnvelopeSettings {
   liningColor: string
   texture: 'smooth' | 'linen' | 'cotton' | 'felt'
   waxColor: string
-  waxEmblem: 'initials' | 'heart' | 'flower'
-  waxInitials: string
+  waxEmblem: 'rose' | 'lily' | 'laurel' | 'heart'
   speed: number // 0.5(느리게) ~ 2(빠르게)
   hint: string
   cardText: string
