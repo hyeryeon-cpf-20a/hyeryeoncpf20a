@@ -62,6 +62,8 @@ export interface EnvelopeSettings {
   hint: string
   cardText: string
   showOnEveryVisit: boolean
+  closure: 'ribbon' | 'seal' // 봉투를 여는 장식
+  ribbonColor: string
   startView: 'closeup' | 'full' // 시작 화면: 실링 클로즈업 / 봉투 전체
 }
 

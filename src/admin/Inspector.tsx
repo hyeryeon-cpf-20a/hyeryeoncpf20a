@@ -155,6 +155,25 @@ function EnvelopeEditor({ id }: { id: string }) {
         />
         <TextInput label="안내 문구" value={s.hint} onChange={(v) => set((x) => void (x.hint = v))} />
       </Group>
+      <Group title="봉투를 여는 장식">
+        <Segmented
+          value={s.closure === 'seal' ? 'seal' : 'ribbon'}
+          onChange={(v) => set((x) => void (x.closure = v))}
+          options={[
+            { value: 'ribbon', label: '리본 풀기' },
+            { value: 'seal', label: '실링왁스' },
+          ]}
+        />
+        {s.closure !== 'seal' && (
+          <ColorInput
+            label="리본 색상"
+            value={s.ribbonColor}
+            onChange={(v) => set((x) => void (x.ribbonColor = v))}
+            presets={['#BFA882', '#C9A09C', '#A9B59C', '#E6DCCB', '#8E4B4F', '#5B6577']}
+          />
+        )}
+      </Group>
+      {s.closure === 'seal' && (
       <Group title="실링왁스">
         <ColorInput label="왁스 색상" value={s.waxColor} onChange={(v) => set((x) => void (x.waxColor = v))} presets={[PALETTE.wax, '#8E5A57', '#B8A489', '#8C9A80', '#6F6259', '#C9A0A0']} />
         <Segmented
@@ -171,6 +190,7 @@ function EnvelopeEditor({ id }: { id: string }) {
           <TextInput label="실링에 넣을 글자" value={s.waxInitials} onChange={(v) => set((x) => void (x.waxInitials = v))} maxLength={7} hint="예: C & J · 최대 7자" />
         )}
       </Group>
+      )}
       <Group title="애니메이션">
         <Slider label="열리는 속도" min={0.5} max={2} step={0.1} value={s.speed} onChange={(v) => set((x) => void (x.speed = v))} format={(n) => (n < 1 ? `느리게 ×${n}` : n > 1 ? `빠르게 ×${n}` : '기본')} />
         <Toggle

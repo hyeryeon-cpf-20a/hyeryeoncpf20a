@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { animate, motion, useMotionValue, type MotionValue } from 'framer-motion'
 import type { SectionOf } from '../lib/types'
 import { WaxSeal } from './WaxSeal'
+import { Ribbon, type RibbonHandle } from './Ribbon'
 import { useInvite } from './context'
 
 interface Props {
@@ -26,6 +27,8 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
   const { content, motionOn } = useInvite()
   const s = section.settings
   const closeup = s.startView !== 'full'
+  const useRibbon = s.closure !== 'seal'
+  const ribbon = useRef<RibbonHandle>(null)
   const [phase, setPhase] = useState<'idle' | 'opening' | 'done'>('idle')
   const root = useRef<HTMLDivElement>(null)
   const camera = useRef<HTMLDivElement>(null)
@@ -88,18 +91,24 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
       onOpened()
       return
     }
-    const sealEl = seal.current!
     const flapEl = flap.current!
     const vh = window.innerHeight
 
     void animate(hint.current!, { opacity: 0 }, { duration: 0.3 * k })
-    // 1. 눌림
-    await animate(sealEl, { scale: 0.92 }, { duration: 0.18 * k, ease: 'easeOut' })
-    await animate(sealEl, { scale: 1.02 }, { duration: 0.24 * k, ease: SOFT })
-    // 2. 봉인 해제 — 살짝 들렸다가 부드럽게 떨어짐
-    await animate(sealEl, { y: -6, rotate: -5 }, { duration: 0.2 * k, ease: 'easeOut' })
-    void animate(sealEl, { y: vh * 0.35, rotate: 24, opacity: 0, scale: 0.9 }, { duration: 0.8 * k, ease: [0.55, 0, 0.75, 0.4] })
-    await new Promise((r) => setTimeout(r, 320 * k))
+    if (useRibbon) {
+      // 1~2. 리본 매듭이 풀리고, 리본 끝이 화면 가득 흔들리며 떨어짐 (계속 진행)
+      await ribbon.current!.untie(k)
+      await new Promise((r) => setTimeout(r, 250 * k))
+    } else {
+      const sealEl = seal.current!
+      // 1. 눌림
+      await animate(sealEl, { scale: 0.92 }, { duration: 0.18 * k, ease: 'easeOut' })
+      await animate(sealEl, { scale: 1.02 }, { duration: 0.24 * k, ease: SOFT })
+      // 2. 봉인 해제 — 살짝 들렸다가 부드럽게 떨어짐
+      await animate(sealEl, { y: -6, rotate: -5 }, { duration: 0.2 * k, ease: 'easeOut' })
+      void animate(sealEl, { y: vh * 0.35, rotate: 24, opacity: 0, scale: 0.9 }, { duration: 0.8 * k, ease: [0.55, 0, 0.75, 0.4] })
+      await new Promise((r) => setTimeout(r, 320 * k))
+    }
     // 3. 덮개가 위로 접히며 열림 (절반 지나면 뒤로)
     void animate(eyebrow.current!, { opacity: 0 }, { duration: 0.4 * k })
     const flapAnim = animate(flapEl, { rotateX: 180 }, { duration: 1.0 * k, ease: EASE })
@@ -242,8 +251,24 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
         </div>
       </div>
 
+      {useRibbon ? (
+        <Ribbon
+          ref={ribbon}
+          color={s.ribbonColor}
+          vw={vp.w}
+          vh={vp.h}
+          cx={vp.w / 2}
+          cy={vp.h / 2 + sealOffset}
+          top={vp.h / 2 - (vp.eh * sy) / 2}
+          bottom={vp.h / 2 + (vp.eh * sy) / 2}
+          width={Math.round(vp.ew * sx * 0.065)}
+          onBowClick={open}
+          label="리본을 풀어 청첩장 열기"
+        />
+      ) : (
+        <>
       {/* 실링왁스 — 카메라 밖에 두어 클로즈업에서도 찌그러지지 않음 */}
-      <div
+        <div
         ref={sealWrap}
         className="absolute left-1/2 top-1/2"
         style={{ zIndex: 5, transform: `translate(-50%, calc(-50% + ${sealOffset}px))` }}
@@ -266,12 +291,15 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
         </button>
       </div>
 
+        </>
+      )}
+
       <p
         ref={hint}
         className="font-serif-en absolute inset-x-0 text-center text-[0.86rem] italic tracking-[0.12em]"
         style={{ color: 'var(--c-muted)', bottom: 'calc(11% + var(--safe-bottom))', zIndex: 5 }}
       >
-        {s.hint}
+        {useRibbon && /seal/i.test(s.hint) ? 'untie the ribbon to open' : s.hint}
       </p>
     </motion.div>
   )
