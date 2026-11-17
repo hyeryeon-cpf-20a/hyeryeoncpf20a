@@ -74,9 +74,7 @@ export function SideNav({ sections, visible }: { sections: Section[]; visible: b
               style={{
                 paddingTop: PAD,
                 paddingBottom: PAD,
-                background: 'color-mix(in srgb, var(--c-bg) 55%, transparent)',
-                backdropFilter: 'blur(6px)',
-                WebkitBackdropFilter: 'blur(6px)',
+                background: 'color-mix(in srgb, var(--c-bg) 72%, transparent)',
               }}
             >
               {sections.map((s) => {

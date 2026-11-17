@@ -133,7 +133,7 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
     <motion.div
       ref={root}
       className="fixed inset-0 z-[60] overflow-hidden"
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: 'none', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
       initial={motionOn ? { opacity: 0 } : false}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
@@ -197,7 +197,7 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
               </div>
 
               {/* 앞주머니 */}
-              <div ref={pocket} className="absolute inset-0" style={{ zIndex: 3 }}>
+              <div ref={pocket} className="absolute inset-0" style={{ zIndex: 3, willChange: 'transform' }}>
                 <div
                   className={`absolute inset-0 ${tex}`}
                   style={{
@@ -215,7 +215,7 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
               <div
                 ref={flap}
                 className="absolute inset-x-0 top-0"
-                style={{ height: `${FLAP * 100}%`, zIndex: 4, transformOrigin: '50% 0%', transformStyle: 'preserve-3d' }}
+                style={{ height: `${FLAP * 100}%`, zIndex: 4, transformOrigin: '50% 0%', transformStyle: 'preserve-3d', willChange: 'transform' }}
               >
                 <div
                   className={`absolute inset-0 ${tex}`}
@@ -273,7 +273,7 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
           }}
           aria-label="화면을 눌러 청첩장 열기"
           className="block rounded-full p-2 outline-none focus-visible:ring-2"
-          style={{ WebkitTapHighlightColor: 'transparent' }}
+          style={{ WebkitTapHighlightColor: 'transparent', willChange: 'transform' }}
         >
           <motion.span
             className="block"
