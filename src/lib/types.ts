@@ -64,6 +64,7 @@ export interface EnvelopeSettings {
   showOnEveryVisit: boolean
   closure: 'ribbon' | 'seal' // 봉투를 여는 장식
   ribbonColor: string
+  ribbonCenter: 'none' | 'seal' // 리본 매듭 가운데 실링왁스
   startView: 'closeup' | 'full' // 시작 화면: 실링 클로즈업 / 봉투 전체
 }
 

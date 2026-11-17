@@ -140,7 +140,7 @@ function EnvelopeEditor({ id }: { id: string }) {
             { value: 'full', label: '봉투 전체' },
           ]}
         />
-        <ColorInput label="봉투 색상" value={s.envelopeColor} onChange={(v) => set((x) => void (x.envelopeColor = v))} presets={['#F7F3EC', '#FAF9F6', '#F1ECE3', '#EEF0EA', '#F3E9E6']} />
+        <ColorInput label="봉투 색상" value={s.envelopeColor} onChange={(v) => set((x) => void (x.envelopeColor = v))} presets={['#F7F3EC', '#FAF9F6', '#F1ECE3', '#EEF0EA', '#F3E9E6', '#2F3B5C', '#5B4B45', '#7A8A74']} />
         <ColorInput label="안쪽 라이닝 색상" value={s.liningColor} onChange={(v) => set((x) => void (x.liningColor = v))} presets={['#EFE8DC', '#E3E7DC', '#EBD9D5', '#E8DFCF']} />
         <Select
           label="종이 질감"
@@ -165,15 +165,22 @@ function EnvelopeEditor({ id }: { id: string }) {
           ]}
         />
         {s.closure !== 'seal' && (
-          <ColorInput
-            label="리본 색상"
-            value={s.ribbonColor}
-            onChange={(v) => set((x) => void (x.ribbonColor = v))}
-            presets={['#BFA882', '#C9A09C', '#A9B59C', '#E6DCCB', '#8E4B4F', '#5B6577']}
-          />
+          <>
+            <ColorInput
+              label="리본 색상 (오간자처럼 비쳐 보여요)"
+              value={s.ribbonColor}
+              onChange={(v) => set((x) => void (x.ribbonColor = v))}
+              presets={['#FFFFFF', '#F1E9DC', '#D9C3A0', '#E2B9B5', '#B9C6AE', '#B7C9DC', '#7E8EA8', '#A86B69']}
+            />
+            <Toggle
+              label="매듭 가운데 실링왁스 달기"
+              checked={s.ribbonCenter === 'seal'}
+              onChange={(v) => set((x) => void (x.ribbonCenter = v ? 'seal' : 'none'))}
+            />
+          </>
         )}
       </Group>
-      {s.closure === 'seal' && (
+      {(s.closure === 'seal' || s.ribbonCenter === 'seal') && (
       <Group title="실링왁스">
         <ColorInput label="왁스 색상" value={s.waxColor} onChange={(v) => set((x) => void (x.waxColor = v))} presets={[PALETTE.wax, '#8E5A57', '#B8A489', '#8C9A80', '#6F6259', '#C9A0A0']} />
         <Segmented

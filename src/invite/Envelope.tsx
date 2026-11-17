@@ -128,7 +128,10 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
     onOpened()
   }
 
-  const tex = `paper-${s.texture}`
+  // 진한 봉투(네이비 등)는 밝은 빛 반사를 줄인 질감 사용
+  const envRgb = [1, 3, 5].map((i) => parseInt((s.envelopeColor || '#F7F3EC').slice(i, i + 2), 16) || 0)
+  const darkEnv = (0.299 * envRgb[0] + 0.587 * envRgb[1] + 0.114 * envRgb[2]) / 255 < 0.45
+  const tex = darkEnv ? 'paper-dark' : `paper-${s.texture}`
   const tri = `polygon(0 0, 100% 0, 50% 100%)`
   return (
     <motion.div
@@ -259,9 +262,12 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
           vh={vp.h}
           cx={vp.w / 2}
           cy={vp.h / 2 + sealOffset}
-          top={vp.h / 2 - (vp.eh * sy) / 2}
-          bottom={vp.h / 2 + (vp.eh * sy) / 2}
-          width={Math.round(vp.ew * sx * 0.065)}
+          envWidth={vp.ew * sx}
+          center={s.ribbonCenter === 'seal' ? (
+            <g transform="translate(-30 -30)">
+              <WaxSeal settings={s} size={60} />
+            </g>
+          ) : undefined}
           onBowClick={open}
           label="리본을 풀어 청첩장 열기"
         />

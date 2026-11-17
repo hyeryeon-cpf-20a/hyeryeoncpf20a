@@ -1,222 +1,300 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, type ReactNode } from 'react'
 
 /**
- * 봉투를 감싼 새틴 리본.
- * untie() 를 호출하면 매듭이 풀리고, 네 갈래의 리본 끝이 화면 전체에서 물결치며 흔들리다 아래로 떨어집니다.
- * (매 프레임 SVG 좌표를 직접 갱신 — 리렌더 없이 가볍게 동작)
+ * 봉투를 감싼 오간자(시스루) 리본과 풍성한 나비 매듭.
+ * - 평소: 긴 꼬리가 바람에 살랑임
+ * - untie(): 매듭이 풀리며 고리가 사라지고, 리본 끝들이 화면 전체에서 물결치다 아래로 떨어짐
+ * 매 프레임 SVG 좌표를 직접 갱신해 리렌더 없이 가볍게 동작합니다.
  */
 
 export interface RibbonHandle {
-  /** 매듭이 풀릴 때까지 기다림. 떨어지는 리본은 그 뒤에도 계속 움직입니다. */
   untie: (k: number) => Promise<void>
 }
 
 interface Props {
   color: string
-  /** 화면 크기 */
   vw: number
   vh: number
-  /** 리본이 교차하는 점(매듭) */
   cx: number
   cy: number
-  /** 세로 리본이 걸치는 봉투의 위·아래 */
-  top: number
-  bottom: number
-  width: number
+  /** 봉투 가로 폭 (매듭 크기 기준) */
+  envWidth: number
   onBowClick: () => void
   label: string
+  /** 매듭 가운데 장식 (실링왁스 등) */
+  center?: ReactNode
 }
 
-const N = 40 // 리본 한 갈래의 마디 수
+const N = 44
 
 function hexToRgb(h: string) {
-  const v = h.replace('#', '')
+  const v = (h || '#ffffff').replace('#', '')
   const f = v.length === 3 ? v.split('').map((c) => c + c).join('') : v
   return [0, 2, 4].map((i) => parseInt(f.slice(i, i + 2), 16) || 0)
 }
-function shadeRgb(rgb: number[], t: number) {
-  // t < 0 → 어둡게, t > 0 → 밝게
-  return `rgb(${rgb.map((c) => Math.round(t < 0 ? c * (1 + t) : c + (255 - c) * t)).join(',')})`
+function mix(rgb: number[], to: number[], t: number) {
+  return `rgb(${rgb.map((c, i) => Math.round(c + (to[i] - c) * t)).join(',')})`
 }
 
-export const Ribbon = forwardRef<RibbonHandle, Props>(function Ribbon({ color, vw, vh, cx, cy, top, bottom, width, onBowClick, label }, ref) {
+type Pt = [number, number]
+
+function cubic(p0: Pt, p1: Pt, p2: Pt, p3: Pt, t: number): Pt {
+  const u = 1 - t
+  return [
+    u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0],
+    u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1],
+  ]
+}
+
+export const Ribbon = forwardRef<RibbonHandle, Props>(function Ribbon({ color, vw, vh, cx, cy, envWidth, onBowClick, label, center }, ref) {
   const rgb = useMemo(() => hexToRgb(color), [color])
+  const lum = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255
+  // 밝은 리본(화이트·아이보리)은 가장자리를 살짝 어둡게, 진한 리본은 밝게 — 와이어 엣지 느낌
+  const edge = lum > 0.82 ? mix(rgb, [120, 108, 98], 0.42) : mix(rgb, [255, 255, 255], 0.5)
+  const fill = mix(rgb, [255, 255, 255], lum > 0.82 ? 0 : 0.08)
+  const fold = lum > 0.82 ? mix(rgb, [110, 100, 92], 0.3) : mix(rgb, [0, 0, 0], 0.18)
+  const sheer = lum > 0.82 ? 0.55 : 0.42 // 비침 정도
+
+  const b = envWidth / 340 // 매듭 크기 배율
+  const width = Math.max(14, envWidth * 0.075)
+
   const svg = useRef<SVGSVGElement>(null)
   const bow = useRef<SVGGElement>(null)
+  const centerRef = useRef<SVGGElement>(null)
   const raf = useRef(0)
-  const strandsRef = useRef<{ quads: SVGPolygonElement[]; hl: SVGPolylineElement }[]>([])
+  const untieStart = useRef<number | null>(null)
+  const els = useRef<{ body: SVGPathElement; e1: SVGPolylineElement; e2: SVGPolylineElement; shine: SVGPolylineElement }[]>([])
 
-  // 네 갈래: 왼쪽·오른쪽(가로 띠), 위·아래(세로 띠). s=0 이 매듭 쪽(풀리는 끝)
-  const strands = useMemo(
-    () => [
-      { dx: -1, dy: 0, len: cx + 40, ph: 0.3, side: -1 },
-      { dx: 1, dy: 0, len: vw - cx + 40, ph: 1.9, side: 1 },
-      { dx: 0, dy: -1, len: cy - top, ph: 3.1, side: -1 },
-      { dx: 0, dy: 1, len: bottom - cy, ph: 4.4, side: 1 },
-    ],
-    [cx, cy, vw, top, bottom],
-  )
+  // 리본 갈래: 가로 띠 왼쪽/오른쪽 + 길게 늘어진 꼬리 두 개. s=0 이 매듭 쪽
+  const strands = useMemo(() => {
+    const line = (to: Pt): Pt[] =>
+      Array.from({ length: N }, (_, i) => {
+        const s = i / (N - 1)
+        return [cx + (to[0] - cx) * s, cy + (to[1] - cy) * s + Math.sin(s * Math.PI) * 2] as Pt
+      })
+    const tail = (m: number, len: number): Pt[] =>
+      Array.from({ length: N }, (_, i) =>
+        cubic([cx + m * 6 * b, cy + 8 * b], [cx + m * 46 * b, cy + 70 * b], [cx + m * 8 * b, cy + 130 * b], [cx + m * 62 * b, cy + len * b], i / (N - 1)),
+      )
+    return [
+      { base: line([-60, cy + 6]), ph: 0.4, idle: 0.15, w: 1 },
+      { base: line([vw + 60, cy - 4]), ph: 2.1, idle: 0.15, w: 1 },
+      { base: tail(-1, 215), ph: 3.3, idle: 1, w: 0.92 },
+      { base: tail(1, 195), ph: 4.7, idle: 1, w: 0.92 },
+    ]
+  }, [cx, cy, vw, b])
 
-  /** 시간 t(초, 0 = 풀리기 시작)에서 리본 모양 계산 후 DOM 갱신 */
-  const draw = (t: number) => {
-    const ramp = Math.min(1, Math.max(0, t) / 0.7)
+  /** idle: 매듭을 풀기 전 경과 시간 / t: 풀리기 시작한 뒤 경과 시간 */
+  const draw = (idle: number, t: number) => {
+    const ramp = Math.min(1, Math.max(0, t) / 0.8)
     const ease = ramp * ramp * (3 - 2 * ramp)
-    const g = vh * 0.85
+    const g = vh * 0.8
     strands.forEach((st, si) => {
-      const els = strandsRef.current[si]
-      if (!els) return
-      const pts: [number, number][] = []
+      const e = els.current[si]
+      if (!e) return
+      const pts: Pt[] = []
       const tw: number[] = []
+      const [bx0, by0] = st.base[0]
+      const [bx1, by1] = st.base[N - 1]
+      const dl = Math.hypot(bx1 - bx0, by1 - by0) || 1
+      const dir: Pt = [(bx1 - bx0) / dl, (by1 - by0) / dl]
       for (let i = 0; i < N; i++) {
         const s = i / (N - 1)
-        let x = cx + st.dx * s * st.len
-        let y = cy + st.dy * s * st.len
+        let [x, y] = st.base[i]
+        // 평소: 꼬리 끝이 바람에 살랑
+        const breeze = st.idle * s * s * 7 * b * Math.sin(idle * 1.6 + s * 3 + st.ph)
+        x += breeze
+        y += breeze * 0.25
         if (t > 0) {
-          // 풀린 끝이 먼저 미끄러져 나가고, 전체가 물결치며 떨어짐
-          const slide = ease * Math.min(st.len * 0.35, vw * 0.25) * (1 - s)
-          x += st.dx * slide
-          y += st.dy * slide
-          const amp = ease * vw * 0.13 * (1 - 0.45 * s)
-          const wave = Math.sin(6.2 * s - 6.5 * t + st.ph)
-          x += amp * wave * (st.dy !== 0 ? 1 : 0.35)
-          y += amp * 0.75 * Math.cos(5.4 * s - 5.6 * t + st.ph) * (st.dx !== 0 ? 1 : 0.4)
-          y += 0.5 * g * Math.max(0, t - 0.25) ** 2 * (1 - 0.5 * s)
+          const slide = ease * Math.min(dl * 0.3, vw * 0.22) * (1 - s)
+          x += dir[0] * slide
+          y += dir[1] * slide
+          const amp = ease * vw * 0.14 * (1 - 0.4 * s)
+          x += amp * Math.sin(6 * s - 6.3 * t + st.ph)
+          y += amp * 0.7 * Math.cos(5.2 * s - 5.4 * t + st.ph)
+          y += 0.5 * g * Math.max(0, t - 0.3) ** 2 * (1 - 0.45 * s)
         }
         pts.push([x, y])
-        tw.push(ease * 1.35 * Math.sin(4.6 * s - 5.2 * t + st.ph * 1.3))
+        tw.push(ease * 1.4 * Math.sin(4.4 * s - 5 * t + st.ph * 1.3) + 0.25 * Math.sin(s * 5 + st.ph + idle * 0.8) * st.idle)
       }
-      // 각 마디를 사각형으로 — 꼬임에 따라 폭과 밝기가 변해 새틴처럼 보임
-      let hl = ''
-      for (let i = 0; i < N - 1; i++) {
-        const [x0, y0] = pts[i]
-        const [x1, y1] = pts[i + 1]
-        const ax = x1 - x0
-        const ay = y1 - y0
+      // 리본 윤곽 (꼬임에 따라 폭이 좁아졌다 넓어짐) + 양쪽 와이어 엣지
+      const L: Pt[] = []
+      const R: Pt[] = []
+      for (let i = 0; i < N; i++) {
+        const a = pts[Math.max(0, i - 1)]
+        const c = pts[Math.min(N - 1, i + 1)]
+        const ax = c[0] - a[0]
+        const ay = c[1] - a[1]
         const l = Math.hypot(ax, ay) || 1
         const nx = -ay / l
         const ny = ax / l
-        const c0 = Math.cos(tw[i])
-        const c1 = Math.cos(tw[i + 1])
-        const w0 = (width / 2) * (0.22 + 0.78 * Math.abs(c0))
-        const w1 = (width / 2) * (0.22 + 0.78 * Math.abs(c1))
-        const q = els.quads[i]
-        q.setAttribute(
-          'points',
-          `${(x0 + nx * w0).toFixed(1)},${(y0 + ny * w0).toFixed(1)} ${(x1 + nx * w1).toFixed(1)},${(y1 + ny * w1).toFixed(1)} ${(x1 - nx * w1).toFixed(1)},${(y1 - ny * w1).toFixed(1)} ${(x0 - nx * w0).toFixed(1)},${(y0 - ny * w0).toFixed(1)}`,
-        )
-        const lightness = c0 > 0 ? 0.12 * c0 - 0.02 : -0.16 * -c0 - 0.06 // 뒷면은 더 어둡게
-        const fill = shadeRgb(rgb, lightness)
-        q.setAttribute('fill', fill)
-        q.setAttribute('stroke', fill) // 마디 사이 이음새 메우기
-        hl += `${x0.toFixed(1)},${y0.toFixed(1)} `
+        // 꼬리 끝은 V자로 잘린 모양
+        const taper = si >= 2 && i > N - 4 ? 1 - (i - (N - 4)) * 0.12 : 1
+        const hw = (width / 2) * st.w * (0.14 + 0.86 * Math.abs(Math.cos(tw[i]))) * taper
+        L.push([pts[i][0] + nx * hw, pts[i][1] + ny * hw])
+        R.push([pts[i][0] - nx * hw, pts[i][1] - ny * hw])
       }
-      els.hl.setAttribute('points', hl)
-      els.hl.setAttribute('stroke-opacity', String(0.32 * (1 - ease * 0.5)))
+      const f = (p: Pt) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`
+      e.body.setAttribute('d', `M${L.map(f).join(' L')} L${R.slice().reverse().map(f).join(' L')} Z`)
+      e.e1.setAttribute('points', L.map(f).join(' '))
+      e.e2.setAttribute('points', R.map(f).join(' '))
+      e.shine.setAttribute('points', pts.map(f).join(' '))
     })
   }
 
+  // 평소 살랑임 + 풀리는 애니메이션을 한 루프에서
+  const pendingResolve = useRef<(() => void) | null>(null)
+  const kRef = useRef(1)
   useEffect(() => {
-    draw(0)
+    const start = performance.now()
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const total = 3
+    const tick = (now: number) => {
+      const idle = (now - start) / 1000
+      let T = -1
+      if (untieStart.current !== null) {
+        T = (now - untieStart.current) / 1000 / kRef.current
+        const press = T < 0.18 ? Math.sin((T / 0.18) * Math.PI) * 0.05 : 0
+        const p = Math.min(1, Math.max(0, (T - 0.15) / 0.5))
+        const pe = p * p * (3 - 2 * p)
+        bow.current?.setAttribute('transform', `translate(${cx} ${cy}) scale(${((1 - press) * (1 - 0.7 * pe)).toFixed(3)}) rotate(${(pe * -18).toFixed(1)})`)
+        bow.current?.setAttribute('opacity', (1 - pe).toFixed(3))
+        if (T > 0.66 && pendingResolve.current) {
+          pendingResolve.current()
+          pendingResolve.current = null
+        }
+        if (svg.current) svg.current.style.opacity = T > total - 0.5 ? String(Math.max(0, (total - T) / 0.5)) : '1'
+        if (T >= total) {
+          if (svg.current) svg.current.style.display = 'none'
+          return
+        }
+      }
+      draw(reduce ? 0 : idle, Math.max(0, T - 0.35))
+      raf.current = requestAnimationFrame(tick)
+    }
+    raf.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [strands, rgb, width])
+  }, [strands, width])
 
   useImperativeHandle(ref, () => ({
     untie: (k: number) =>
       new Promise<void>((resolve) => {
-        const start = performance.now()
-        let resolved = false
-        const total = 2.8
-        const tick = (now: number) => {
-          const T = (now - start) / 1000 / k // 실제 경과(속도 보정)
-          // 0~0.18: 매듭을 살짝 당김 / 0.18~0.6: 고리가 풀려 사라짐
-          const press = T < 0.18 ? Math.sin((T / 0.18) * Math.PI) * 0.05 : 0
-          const p = Math.min(1, Math.max(0, (T - 0.18) / 0.42))
-          const pe = p * p * (3 - 2 * p)
-          if (bow.current) {
-            bow.current.setAttribute('transform', `translate(${cx} ${cy}) scale(${(1 - press) * (1 - 0.75 * pe)}) rotate(${pe * 25})`)
-            bow.current.setAttribute('opacity', String(1 - pe))
-          }
-          draw(Math.max(0, T - 0.32))
-          if (!resolved && T > 0.62) {
-            resolved = true
-            resolve()
-          }
-          if (svg.current) svg.current.style.opacity = String(T > total - 0.5 ? Math.max(0, (total - T) / 0.5) : 1)
-          if (T < total) raf.current = requestAnimationFrame(tick)
-          else if (svg.current) svg.current.style.display = 'none'
-        }
-        raf.current = requestAnimationFrame(tick)
+        kRef.current = k
+        pendingResolve.current = resolve
+        untieStart.current = performance.now()
       }),
   }))
 
   const id = useMemo(() => Math.random().toString(36).slice(2, 8), [])
-  const b = width / 24 // 매듭 크기 배율
-  const dark = shadeRgb(rgb, -0.16)
-  const mid = shadeRgb(rgb, 0.04)
-  const light = shadeRgb(rgb, 0.34)
+  const sheerFill = { fill, fillOpacity: sheer }
+  const edgeStroke = { stroke: edge, strokeOpacity: 0.95, strokeWidth: 1.1, strokeLinejoin: 'round' as const, fill: 'none' }
+
+  /**
+   * 나비 고리: 리본 띠가 접혀 만든 고리 — 바깥·안쪽 두 가장자리와 비치는 천, 가운데는 뚫려 있음.
+   * 큰 고리와 작은 고리를 겹쳐 풍성한 더블 리본으로.
+   */
+  const loops = useMemo(() => {
+    const bw = width / b // 매듭 좌표계에서의 리본 폭
+    const band = (p0: Pt, c1: Pt, c2: Pt, p1: Pt, c3: Pt, c4: Pt, p2: Pt, wMax: number) => {
+      const M = 60
+      const pts: Pt[] = []
+      for (let i = 0; i < M; i++) pts.push(cubic(p0, c1, c2, p1, i / (M - 1)))
+      for (let i = 1; i < M; i++) pts.push(cubic(p1, c3, c4, p2, i / (M - 1)))
+      const n = pts.length
+      const L: Pt[] = []
+      const R: Pt[] = []
+      for (let i = 0; i < n; i++) {
+        const a0 = pts[Math.max(0, i - 1)]
+        const a1 = pts[Math.min(n - 1, i + 1)]
+        const ax = a1[0] - a0[0]
+        const ay = a1[1] - a0[1]
+        const l = Math.hypot(ax, ay) || 1
+        const u = i / (n - 1)
+        // 매듭 쪽(양 끝)은 오므려지고, 고리 중간은 넓게 펼쳐짐 + 한 번 살짝 꼬임
+        const gather = Math.pow(Math.sin(Math.PI * u), 0.55)
+        const twist = 0.55 + 0.45 * Math.abs(Math.cos(u * Math.PI * 1.15 + 0.4))
+        const hw = (wMax / 2) * (0.18 + 0.82 * gather) * twist
+        L.push([pts[i][0] - (ay / l) * hw, pts[i][1] + (ax / l) * hw])
+        R.push([pts[i][0] + (ay / l) * hw, pts[i][1] - (ax / l) * hw])
+      }
+      const f = (p: Pt) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`
+      return { d: `M${L.map(f).join(' L')} L${R.slice().reverse().map(f).join(' L')} Z`, L: L.map(f).join(' '), R: R.map(f).join(' '), C: pts.map(f).join(' ') }
+    }
+    return {
+      big: band([6, -2], [10, -70], [110, -96], [132, -46], [148, -8], [70, 30], [6, 6], bw * 1.85),
+      small: band([4, 2], [30, -40], [96, -54], [104, -24], [110, 4], [56, 26], [4, 6], bw * 1.4),
+      drop: band([4, 6], [30, 30], [80, 48], [114, 30], [92, 44], [40, 34], [4, 8], bw * 1.05),
+    }
+  }, [width, b])
+
+  const Band = ({ d, L, R, C, op = 1 }: { d: string; L: string; R: string; C: string; op?: number }) => (
+    <g>
+      <path d={d} style={{ ...sheerFill, fillOpacity: sheer * op }} />
+      <polyline points={L} style={edgeStroke} />
+      <polyline points={R} style={{ ...edgeStroke, strokeOpacity: 0.8 }} />
+      <polyline points={C} fill="none" stroke="#fff" strokeOpacity=".22" strokeWidth="2" strokeLinecap="round" />
+    </g>
+  )
+
+  const Loop = ({ m, rot, sc }: { m: 1 | -1; rot: number; sc: number }) => (
+    <g transform={`scale(${m * sc} ${sc}) rotate(${rot})`}>
+      <Band {...loops.drop} op={0.85} />
+      <Band {...loops.big} />
+      <Band {...loops.small} op={0.9} />
+    </g>
+  )
 
   return (
-    <svg ref={svg} className="pointer-events-none absolute inset-0" width={vw} height={vh} viewBox={`0 0 ${vw} ${vh}`} style={{ zIndex: 5, overflow: 'visible' }} aria-hidden={false}>
+    <svg ref={svg} className="pointer-events-none absolute inset-0" width={vw} height={vh} viewBox={`0 0 ${vw} ${vh}`} style={{ zIndex: 5, overflow: 'visible' }}>
       <defs>
-        <linearGradient id={`lg${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={dark} />
-          <stop offset=".45" stopColor={light} />
-          <stop offset="1" stopColor={dark} />
-        </linearGradient>
-        <radialGradient id={`kn${id}`} cx="40%" cy="35%" r="75%">
-          <stop offset="0" stopColor={light} />
-          <stop offset=".7" stopColor={mid} />
-          <stop offset="1" stopColor={dark} />
-        </radialGradient>
         <filter id={`sh${id}`} x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#3a2a20" floodOpacity=".22" />
+          <feDropShadow dx="0" dy="2" stdDeviation="2.4" floodColor="#2a2018" floodOpacity=".14" />
         </filter>
       </defs>
 
-      {/* 리본 띠 (네 갈래) */}
-      <g filter={`url(#sh${id})`}>
+      {/* 리본 띠 + 꼬리 */}
+      <g>
         {strands.map((_, si) => (
           <g
             key={si}
             ref={(el) => {
               if (!el) return
-              const quads = Array.from(el.querySelectorAll('polygon')) as SVGPolygonElement[]
-              const hl = el.querySelector('polyline') as SVGPolylineElement
-              strandsRef.current[si] = { quads, hl }
+              els.current[si] = {
+                body: el.querySelector('path')!,
+                e1: el.querySelectorAll('polyline')[0] as SVGPolylineElement,
+                e2: el.querySelectorAll('polyline')[1] as SVGPolylineElement,
+                shine: el.querySelectorAll('polyline')[2] as SVGPolylineElement,
+              }
             }}
           >
-            {Array.from({ length: N - 1 }, (_, i) => (
-              <polygon key={i} fill={mid} stroke={mid} strokeWidth={0.9} strokeLinejoin="round" />
-            ))}
-            <polyline fill="none" stroke="#fff" strokeWidth={Math.max(1, width * 0.12)} strokeLinecap="round" strokeOpacity=".3" />
+            <path style={sheerFill} fillRule="nonzero" />
+            <polyline style={edgeStroke} />
+            <polyline style={edgeStroke} />
+            <polyline fill="none" stroke="#fff" strokeOpacity=".35" strokeWidth={Math.max(1.5, width * 0.18)} strokeLinecap="round" />
           </g>
         ))}
       </g>
 
-      {/* 나비 매듭 */}
-      <g ref={bow} transform={`translate(${cx} ${cy})`} filter={`url(#sh${id})`}>
+      {/* 풍성한 나비 매듭 */}
+      <g ref={bow} transform={`translate(${cx} ${cy})`}>
         <g transform={`scale(${b})`}>
-          {/* 짧은 꼬리 */}
-          {[1, -1].map((m) => (
-            <path key={`t${m}`} transform={`scale(${m} 1)`} d="M3 6 C 10 26, 18 46, 30 70 L 24 68 L 20 80 C 10 56, 2 32, -5 9 Z" fill={`url(#lg${id})`} />
-          ))}
-          {/* 고리 */}
-          {[1, -1].map((m) => (
-            <g key={`l${m}`} transform={`scale(${m} 1)`}>
-              <path d="M0 -1 C 12 -30, 60 -40, 68 -14 C 73 4, 44 14, 0 4 Z" fill={`url(#lg${id})`} />
-              <path d="M6 -2 C 20 -20, 48 -26, 56 -13 C 46 -9, 24 -4, 6 -2 Z" fill={dark} opacity=".3" />
-              <path d="M10 -14 C 24 -26, 44 -28, 54 -22" fill="none" stroke="#fff" strokeOpacity=".35" strokeWidth="1.6" strokeLinecap="round" />
-            </g>
-          ))}
-          {/* 매듭 */}
-          <rect x="-10" y="-11" width="20" height="22" rx="7" fill={`url(#kn${id})`} />
-          <path d="M-5 -7 C -2 -9, 3 -9, 5 -6" fill="none" stroke="#fff" strokeOpacity=".45" strokeWidth="1.3" strokeLinecap="round" />
+          <Loop m={-1} rot={-6} sc={1.04} />
+          <Loop m={1} rot={4} sc={1} />
+          {/* 매듭: 오므려 묶인 천 */}
+          <path d="M-15 -16 C -5 -22, 7 -22, 15 -14 C 20 -3, 18 11, 10 18 C 1 22, -10 21, -16 13 C -21 3, -20 -8, -15 -16 Z" style={{ ...sheerFill, fillOpacity: Math.min(0.92, sheer * 1.45) }} />
+          <path d="M-15 -16 C -5 -22, 7 -22, 15 -14 C 20 -3, 18 11, 10 18 C 1 22, -10 21, -16 13 C -21 3, -20 -8, -15 -16 Z" style={edgeStroke} />
+          <g fill="none" stroke={fold} strokeOpacity=".35" strokeWidth="1" strokeLinecap="round">
+            <path d="M-9 -15 C -6 -4, -6 6, -9 16" />
+            <path d="M0 -17 C 2 -4, 2 8, 0 19" />
+            <path d="M8 -15 C 10 -4, 10 6, 7 16" />
+          </g>
+          {center && <g ref={centerRef}>{center}</g>}
         </g>
       </g>
 
       {/* 매듭 터치 영역 */}
-      <foreignObject x={cx - 60 * b} y={cy - 45 * b} width={120 * b} height={100 * b} style={{ pointerEvents: 'auto' }}>
+      <foreignObject x={cx - 140 * b} y={cy - 95 * b} width={280 * b} height={190 * b} style={{ pointerEvents: 'auto' }}>
         <button
           type="button"
           onClick={onBowClick}

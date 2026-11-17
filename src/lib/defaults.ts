@@ -88,7 +88,8 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       showOnEveryVisit: true,
       startView: 'closeup',
       closure: 'ribbon',
-      ribbonColor: '#BFA882',
+      ribbonColor: '#FFFFFF',
+      ribbonCenter: 'none',
     }),
     main: () => ({
       namesEn: 'hyeryeon & sunghwan',
