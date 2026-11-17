@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { fetchPublicInvitation } from '../lib/api'
 import { isBackendConfigured } from '../lib/supabase'
-import { defaultContent } from '../lib/defaults'
+import { DEFAULT_SLUG, defaultContent } from '../lib/defaults'
 import type { PublicInvitation, RuntimeFlags } from '../lib/types'
 import { errorMessage } from '../lib/util'
 import { InvitationView } from './InvitationView'
@@ -16,7 +16,7 @@ function Centered({ children }: { children: React.ReactNode }) {
 }
 
 export default function InvitePage() {
-  const { slug = 'our-wedding' } = useParams()
+  const { slug = DEFAULT_SLUG } = useParams()
   const [state, setState] = useState<
     { kind: 'loading' } | { kind: 'ok'; inv: PublicInvitation } | { kind: 'missing' } | { kind: 'error'; message: string } | { kind: 'demo' }
   >(isBackendConfigured ? { kind: 'loading' } : { kind: 'demo' })

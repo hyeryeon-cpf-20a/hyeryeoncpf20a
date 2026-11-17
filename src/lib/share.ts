@@ -1,10 +1,12 @@
+import { DEFAULT_SLUG } from './defaults'
 import type { InvitationContent } from './types'
 import { imageSrc } from './image'
 
 const KAKAO_SDK = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js'
 
+/** 하객에게 보낼 주소 — 기본 청첩장은 도메인만으로 열림 (예: https://our-wedding.vercel.app) */
 export function inviteUrl(slug: string, origin = window.location.origin) {
-  return `${origin}/invite/${slug}`
+  return slug === DEFAULT_SLUG ? `${origin}/` : `${origin}/invite/${slug}`
 }
 
 function loadKakao(): Promise<void> {

@@ -14,7 +14,7 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <Suspense fallback={<div className="min-h-[100svh]" style={{ background: 'var(--c-bg)' }} />}>
         <Routes>
-          <Route path="/" element={<Navigate to={`/invite/${DEFAULT_SLUG}`} replace />} />
+          <Route path="/" element={<InvitePage />} />
           <Route path="/invite/:slug" element={<InvitePage />} />
           <Route path="/admin/preview" element={<PreviewPage />} />
           <Route path="/admin/*" element={<AdminApp />} />

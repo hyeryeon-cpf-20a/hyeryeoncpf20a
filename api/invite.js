@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   const host = req.headers['x-forwarded-host'] || req.headers.host
   const proto = req.headers['x-forwarded-proto'] || 'https'
   const origin = `${proto}://${host}`
-  const slug = String(req.query.slug || '').replace(/[^a-z0-9-]/g, '').slice(0, 50) || 'our-wedding'
+  const slug = String(req.query.slug || '').replace(/[^a-z0-9-]/g, '').slice(0, 50) || process.env.VITE_DEFAULT_SLUG || 'our-wedding'
 
   let html
   try {
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         const img = imageUrl(c.share.image || main?.settings?.photo, url, origin)
         const title = esc(c.share.title)
         const desc = esc(String(c.share.description || '').replace(/\n/g, ' '))
-        const pageUrl = `${origin}/invite/${slug}`
+        const pageUrl = req.query.slug ? `${origin}/invite/${slug}` : `${origin}/`
         const tags = [
           `<title>${title}</title>`,
           `<meta name="description" content="${desc}" />`,
