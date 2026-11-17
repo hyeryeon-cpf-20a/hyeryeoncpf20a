@@ -112,6 +112,7 @@ export default function AdminApp() {
 
   useEffect(() => {
     document.title = '청첩장 관리'
+    document.documentElement.classList.remove('invite-doc')
     if (!supabase) return
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))

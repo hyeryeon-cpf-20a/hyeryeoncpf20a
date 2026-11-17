@@ -27,6 +27,7 @@ export interface ViewOptions {
 
 function applyTheme(content: InvitationContent) {
   const r = document.documentElement
+  r.classList.add('invite-doc')
   const c = content.theme.colors
   r.style.setProperty('--c-bg', c.bg)
   r.style.setProperty('--c-bg2', c.bg2)

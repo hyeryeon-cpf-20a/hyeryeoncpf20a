@@ -47,6 +47,17 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 청첩장 화면에서는 스크롤 막대를 숨김 (스크롤은 그대로 동작) */
+html.invite-doc {
+  scrollbar-width: none;
+}
+html.invite-doc::-webkit-scrollbar,
+html.invite-doc body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* 하객 페이지 전용 */
 .invite-root {
   background: var(--c-bg);
