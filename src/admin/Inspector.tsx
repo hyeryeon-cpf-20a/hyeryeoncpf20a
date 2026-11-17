@@ -131,6 +131,15 @@ function EnvelopeEditor({ id }: { id: string }) {
   return (
     <>
       <Group title="봉투">
+        <Segmented
+          label="시작 화면"
+          value={s.startView}
+          onChange={(v) => set((x) => void (x.startView = v))}
+          options={[
+            { value: 'closeup', label: '실링 클로즈업 (화면 가득)' },
+            { value: 'full', label: '봉투 전체' },
+          ]}
+        />
         <ColorInput label="봉투 색상" value={s.envelopeColor} onChange={(v) => set((x) => void (x.envelopeColor = v))} presets={['#F7F3EC', '#FAF9F6', '#F1ECE3', '#EEF0EA', '#F3E9E6']} />
         <ColorInput label="안쪽 라이닝 색상" value={s.liningColor} onChange={(v) => set((x) => void (x.liningColor = v))} presets={['#EFE8DC', '#E3E7DC', '#EBD9D5', '#E8DFCF']} />
         <Select

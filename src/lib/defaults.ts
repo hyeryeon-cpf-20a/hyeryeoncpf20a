@@ -86,6 +86,7 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       hint: 'tap the seal to open',
       cardText: 'You are invited',
       showOnEveryVisit: true,
+      startView: 'closeup',
     }),
     main: () => ({
       namesEn: 'hyeryeon & sunghwan',
