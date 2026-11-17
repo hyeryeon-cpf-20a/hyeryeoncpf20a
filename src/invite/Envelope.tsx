@@ -80,6 +80,7 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
   const sealSize = Math.round(vp.ew * sx * (closeup ? 0.3 : 0.25))
 
   const opening = useRef(false)
+  const ripple = useRef<HTMLSpanElement>(null)
   async function open() {
     if (opening.current) return
     opening.current = true
@@ -96,8 +97,10 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
     void animate(hint.current!, { opacity: 0 }, { duration: 0.3 * k })
       const sealEl = seal.current!
       // 1. 눌림
-      await animate(sealEl, { scale: 0.92 }, { duration: 0.18 * k, ease: 'easeOut' })
-      await animate(sealEl, { scale: 1.02 }, { duration: 0.24 * k, ease: SOFT })
+      // 어디를 눌러도 실링왁스가 반응: 퍼지는 물결 + 꾹 눌림
+      if (ripple.current) void animate(ripple.current, { scale: [0.9, 2.1], opacity: [0.45, 0] }, { duration: 0.9 * k, ease: 'easeOut' })
+      await animate(sealEl, { scale: 0.86 }, { duration: 0.2 * k, ease: 'easeOut' })
+      await animate(sealEl, { scale: 1.04 }, { duration: 0.26 * k, ease: SOFT })
       // 2. 봉인 해제 — 살짝 들렸다가 부드럽게 떨어짐
       await animate(sealEl, { y: -6, rotate: -5 }, { duration: 0.2 * k, ease: 'easeOut' })
       void animate(sealEl, { y: vh * 0.35, rotate: 24, opacity: 0, scale: 0.9 }, { duration: 0.8 * k, ease: [0.55, 0, 0.75, 0.4] })
@@ -255,6 +258,12 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
         className="absolute left-1/2 top-1/2"
         style={{ zIndex: 5, transform: `translate(-50%, calc(-50% + ${sealOffset}px))` }}
       >
+        <span
+          ref={ripple}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 m-auto rounded-full"
+          style={{ width: sealSize, height: sealSize, border: `2px solid ${s.waxColor}`, opacity: 0 }}
+        />
         <button
           ref={seal}
           type="button"
