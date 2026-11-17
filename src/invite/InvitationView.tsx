@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { motion, useMotionValue } from 'framer-motion'
 import type { InvitationContent, RuntimeFlags, Section, SectionOf } from '../lib/types'
 import { fontStack, loadFonts } from '../lib/fonts'
@@ -73,6 +73,11 @@ function renderSection(s: Section, selected: boolean, ready: boolean) {
   }
 }
 
+/** 섹션 단위로 메모 — 봉투가 열릴 때 메인 섹션만 다시 그려 버벅임을 줄임 */
+const SectionNode = memo(function SectionNode({ s, selected, ready }: { s: Section; selected: boolean; ready: boolean }) {
+  return renderSection(s, selected, ready)
+})
+
 export function InvitationView({ content, flags, options = {} }: { content: InvitationContent; flags: RuntimeFlags; options?: ViewOptions }) {
   const [reduced, setReduced] = useState(prefersReducedMotion)
   useEffect(() => {
@@ -124,7 +129,18 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
             : undefined
         }
       >
-        <motion.main style={{ y: pageY }}>{visible.map((s) => renderSection(s, options.selectedId === s.id, ready))}</motion.main>
+        <main>
+          {visible.map((s, i) =>
+            i === 0 ? (
+              // 봉투 안에서 올라오는 것은 첫 화면(메인)만 — 움직이는 영역을 작게
+              <motion.div key={s.id} style={{ y: pageY, willChange: envOpen ? 'transform' : undefined }}>
+                <SectionNode s={s} selected={options.selectedId === s.id} ready={s.type === 'main' ? ready : true} />
+              </motion.div>
+            ) : (
+              <SectionNode key={s.id} s={s} selected={options.selectedId === s.id} ready={s.type === 'main' ? ready : true} />
+            ),
+          )}
+        </main>
         {visible.length === 0 && (
           <div className="flex min-h-[100svh] items-center justify-center text-[0.9rem]" style={{ color: 'var(--c-muted)' }}>
             표시할 섹션이 없어요.

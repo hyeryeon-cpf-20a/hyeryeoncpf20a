@@ -23,14 +23,19 @@ export function MainSection({ section, selected, ready }: { section: SectionOf<'
   const backdrop =
     s.bgPhoto && src ? (
       <>
+        {/* 1/4 크기로 흐린 뒤 4배 확대 — 같은 모습, 훨씬 가벼운 계산 */}
         <motion.img
           src={src}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover"
+          decoding="async"
+          className="absolute left-0 top-0 object-cover"
           style={{
+            width: '25%',
+            height: '25%',
             objectPosition: `${fx}% ${fy}%`,
-            filter: `blur(${s.bgBlur}px) saturate(.9)`,
-            transform: `scale(${1 + Math.min(0.3, s.bgBlur / 80)})`,
+            filter: s.bgBlur ? `blur(${s.bgBlur / 4}px) saturate(.9)` : 'saturate(.9)',
+            transformOrigin: '0 0',
+            transform: `scale(4) translate(${-Math.min(0.15, s.bgBlur / 160) * 100}%, ${-Math.min(0.15, s.bgBlur / 160) * 100}%) scale(${1 + Math.min(0.3, s.bgBlur / 80)})`,
           }}
           initial={anim ? { opacity: 0 } : { opacity: s.bgOpacity }}
           animate={ready ? { opacity: s.bgOpacity } : undefined}
@@ -48,8 +53,8 @@ export function MainSection({ section, selected, ready }: { section: SectionOf<'
         <motion.h1
           className="font-script leading-[1.05]"
           style={{ fontSize: `calc(${s.namesSize}rem * var(--title-scale, 1))`, color: 'var(--c-text)' }}
-          initial={anim ? { opacity: 0, y: 14, filter: 'blur(4px)' } : false}
-          animate={ready ? { opacity: 1, y: 0, filter: 'blur(0px)' } : undefined}
+          initial={anim ? { opacity: 0, y: 14 } : false}
+          animate={ready ? { opacity: 1, y: 0 } : undefined}
           transition={{ duration: d * 1.1, ease: [0.22, 0.61, 0.36, 1], delay: 0.15 / speed }}
         >
           {s.namesEn}

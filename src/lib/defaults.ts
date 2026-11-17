@@ -84,7 +84,7 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       waxEmblem: 'initials',
       waxInitials: 'H & S',
       speed: 1,
-      hint: 'tap the seal to open',
+      hint: 'Tap anywhere to open',
       cardText: 'You are invited',
       showOnEveryVisit: true,
       startView: 'closeup',

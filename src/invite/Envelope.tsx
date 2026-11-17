@@ -79,8 +79,10 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
   const sealOffset = (FLAP - 0.5) * vp.eh * sy
   const sealSize = Math.round(vp.ew * sx * (closeup ? 0.3 : 0.25))
 
+  const opening = useRef(false)
   async function open() {
-    if (phase !== 'idle') return
+    if (opening.current) return
+    opening.current = true
     setPhase('opening')
     if (!motionOn) {
       await animate(root.current!, { opacity: 0 }, { duration: 0.45 })
@@ -133,6 +135,9 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
       role="dialog"
+      onClick={() => void open()}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && void open()}
+      tabIndex={-1}
       aria-label="청첩장 봉투"
     >
       <div ref={bg} aria-hidden className="pointer-events-none absolute inset-0" style={{ background: 'var(--c-bg)' }}>
@@ -216,7 +221,6 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
                     clipPath: tri,
                     backfaceVisibility: 'hidden',
                     WebkitBackfaceVisibility: 'hidden',
-                    filter: 'drop-shadow(0 2px 2px rgba(0,0,0,.05))',
                   }}
                 />
                 {/* 뒷면: 덮개가 뒤집혔을 때 꼭짓점이 위를 향하도록 같은 삼각형을 그대로 뒤집어 둠 */}
@@ -254,8 +258,11 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
         <button
           ref={seal}
           type="button"
-          onClick={open}
-          aria-label="실링왁스를 눌러 청첩장 열기"
+          onClick={(e) => {
+            e.stopPropagation()
+            void open()
+          }}
+          aria-label="화면을 눌러 청첩장 열기"
           className="block rounded-full p-2 outline-none focus-visible:ring-2"
           style={{ WebkitTapHighlightColor: 'transparent' }}
         >
@@ -272,10 +279,18 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
 
       <p
         ref={hint}
-        className="font-serif-en absolute inset-x-0 text-center text-[0.86rem] italic tracking-[0.12em]"
-        style={{ color: 'var(--c-muted)', bottom: 'calc(11% + var(--safe-bottom))', zIndex: 5 }}
+        className="pointer-events-none absolute inset-x-0 flex items-center justify-center gap-3"
+        style={{ bottom: 'calc(10% + var(--safe-bottom))', zIndex: 5, color: 'var(--c-muted)' }}
       >
-        {s.hint}
+        <span className="h-px w-8" style={{ background: 'currentColor', opacity: 0.45 }} />
+        <motion.span
+          className="font-serif-en text-[0.8rem] uppercase tracking-[0.42em]"
+          animate={motionOn && phase === 'idle' ? { opacity: [0.45, 1, 0.45] } : { opacity: 1 }}
+          transition={motionOn && phase === 'idle' ? { duration: 2.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+        >
+          {!s.hint || /seal/i.test(s.hint) ? 'Tap anywhere to open' : s.hint}
+        </motion.span>
+        <span className="h-px w-8" style={{ background: 'currentColor', opacity: 0.45 }} />
       </p>
     </motion.div>
   )
