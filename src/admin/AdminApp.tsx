@@ -97,7 +97,16 @@ function Login() {
   )
 }
 
+function initialSlug() {
+  try {
+    return new URLSearchParams(window.location.search).get('v') || DEFAULT_SLUG
+  } catch {
+    return DEFAULT_SLUG
+  }
+}
+
 export default function AdminApp() {
+  const [slug, setSlug] = useState(initialSlug)
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const [state, setState] = useState<{ kind: 'loading' } | { kind: 'ok'; inv: AdminInvitation } | { kind: 'denied'; message: string }>({ kind: 'loading' })
 
@@ -117,7 +126,13 @@ export default function AdminApp() {
     ;(async () => {
       try {
         await claimInvitation(DEFAULT_SLUG)
-        const inv = await loadAdminInvitation(DEFAULT_SLUG)
+        let inv: AdminInvitation
+        try {
+          inv = await loadAdminInvitation(slug)
+        } catch (err) {
+          if (slug === DEFAULT_SLUG) throw err
+          inv = await loadAdminInvitation(DEFAULT_SLUG) // 지워진 버전 등
+        }
         if (!cancel) setState({ kind: 'ok', inv })
       } catch (e) {
         if (!cancel) setState({ kind: 'denied', message: errorMessage(e) })
@@ -126,7 +141,7 @@ export default function AdminApp() {
     return () => {
       cancel = true
     }
-  }, [userId])
+  }, [userId, slug])
 
   if (!isBackendConfigured) return <NotConfigured />
   if (session === undefined) return <div className="min-h-[100dvh] bg-[#F5F3EF]" />
@@ -152,5 +167,19 @@ export default function AdminApp() {
         </button>
       </Shell>
     )
-  return <Editor initial={state.inv} email={session.user.email ?? ''} onSignOut={() => supabase!.auth.signOut()} />
+  return (
+    <Editor
+      key={state.inv.id}
+      initial={state.inv}
+      email={session.user.email ?? ''}
+      onSignOut={() => supabase!.auth.signOut()}
+      onSwitchVersion={(next) => {
+        const u = new URL(window.location.href)
+        if (next === DEFAULT_SLUG) u.searchParams.delete('v')
+        else u.searchParams.set('v', next)
+        window.history.replaceState(null, '', u.toString())
+        setSlug(next)
+      }}
+    />
+  )
 }

@@ -34,6 +34,7 @@ export const SECTION_META: Record<SectionType, { name: string; label: string; si
   photographer: { name: 'Photographer · 하객 사진', label: 'Photos' },
   thankyou: { name: 'Thank You · 마지막 인사', label: 'Thanks' },
   text: { name: 'Text · 자유 텍스트', label: 'Note' },
+  greeting: { name: 'Invitation · 초대 글 + 사진', label: 'Invitation' },
 }
 
 export function defaultStyle(overrides: Partial<SectionStyle> = {}): SectionStyle {
@@ -143,7 +144,8 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
     gallery: () => ({
       eyebrow: 'OUR MOMENTS',
       title: '우리의 순간들',
-      layout: 'editorial',
+      layout: 'carousel',
+      carouselAspect: '4:5',
       columns: 3,
       initialCount: 9,
       photos: [1, 2, 3, 4, 5, 6].map<GalleryPhoto>((n) => ({ id: uid(), image: sampleImage(n), caption: '' })),
@@ -201,6 +203,15 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       showDate: true,
       effect: 'petals',
     }),
+    greeting: () => ({
+      eyebrow: 'INVITATION',
+      title: '소중한 분들을 초대합니다',
+      body: '서로가 마주보며 다져온 사랑을\n이제 함께 한 곳을 바라보며\n걸어갈 수 있는 큰 사랑으로 키우고자 합니다.\n\n저희 두 사람이 사랑의 이름으로\n지켜나갈 수 있게 앞날을\n축복해 주시면 감사하겠습니다.',
+      photo: sampleImage(2),
+      aspect: '4:5',
+      radius: 22,
+      caption: '',
+    }),
     text: () => ({
       eyebrow: 'NOTICE',
       title: '알려드립니다',
@@ -225,6 +236,7 @@ export function createSection<T extends SectionType>(type: T, label?: string): S
     photographer: { background: 'bg', fitScreen: false },
     thankyou: { background: 'bg', animation: { enabled: true, type: 'fade', duration: 1.6 } },
     text: { fitScreen: false },
+    greeting: { background: 'bg', fitScreen: false },
   }
   return {
     id: uid(),

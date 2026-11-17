@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import type { GalleryPhoto, SectionOf } from '../../lib/types'
+import { useEffect, useRef, useState } from 'react'
+import type { Aspect, GalleryPhoto, SectionOf } from '../../lib/types'
 import { imageSrc } from '../../lib/image'
 import { Img } from '../ui/Img'
 import { Lightbox } from '../ui/Lightbox'
@@ -93,12 +93,111 @@ function Slider({ photos, open }: { photos: GalleryPhoto[]; open: (i: number) =>
   )
 }
 
+/** 큰 사진 한 장 + 아래 작은 사진 줄. 큰 사진·작은 사진 모두 옆으로 스와이프 */
+function Carousel({ photos, aspect, open }: { photos: GalleryPhoto[]; aspect: Aspect; open: (i: number) => void }) {
+  const main = useRef<HTMLDivElement>(null)
+  const strip = useRef<HTMLDivElement>(null)
+  const [idx, setIdx] = useState(0)
+  const raf = useRef(0)
+
+  const onMainScroll = () => {
+    cancelAnimationFrame(raf.current)
+    raf.current = requestAnimationFrame(() => {
+      const el = main.current
+      if (!el) return
+      const i = Math.round(el.scrollLeft / el.clientWidth)
+      if (i !== idx) setIdx(Math.max(0, Math.min(photos.length - 1, i)))
+    })
+  }
+
+  // 지금 보이는 사진의 썸네일을 가운데로
+  useEffect(() => {
+    const st = strip.current
+    const th = st?.children[idx] as HTMLElement | undefined
+    if (!st || !th) return
+    st.scrollTo({ left: th.offsetLeft - st.clientWidth / 2 + th.clientWidth / 2, behavior: 'smooth' })
+  }, [idx])
+
+  const goTo = (i: number) => {
+    const el = main.current
+    if (!el) return
+    setIdx(i)
+    el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' })
+  }
+
+  const cur = photos[idx]
+  return (
+    <div className="text-left">
+      <div className="relative">
+        <div
+          ref={main}
+          onScroll={onMainScroll}
+          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto"
+          style={{ overscrollBehaviorX: 'contain', scrollBehavior: 'smooth' }}
+          aria-roledescription="사진 슬라이드"
+        >
+          {photos.map((p, i) => (
+            <div key={p.id} className="w-full shrink-0 snap-center snap-always" aria-hidden={i !== idx}>
+              <Img image={p.image} aspect={aspect} onClick={() => open(i)} alt={p.caption || `사진 ${i + 1}`} eager={i < 2} />
+            </div>
+          ))}
+        </div>
+        <span
+          className="font-serif-en pointer-events-none absolute bottom-3 right-3 rounded-full px-2.5 py-0.5 text-[0.7rem] tracking-[0.12em]"
+          style={{ background: 'rgba(28,25,22,.38)', color: '#fff' }}
+        >
+          {idx + 1} / {photos.length}
+        </span>
+        {photos.length > 1 && (
+          <>
+            <button type="button" aria-label="이전 사진" onClick={() => goTo(Math.max(0, idx - 1))} disabled={idx === 0} className="tap absolute left-1 top-1/2 flex h-10 w-8 -translate-y-1/2 items-center justify-center text-white/90 disabled:opacity-0" style={{ textShadow: '0 1px 4px rgba(0,0,0,.4)' }}>
+              ‹
+            </button>
+            <button type="button" aria-label="다음 사진" onClick={() => goTo(Math.min(photos.length - 1, idx + 1))} disabled={idx === photos.length - 1} className="tap absolute right-1 top-1/2 flex h-10 w-8 -translate-y-1/2 items-center justify-center text-white/90 disabled:opacity-0" style={{ textShadow: '0 1px 4px rgba(0,0,0,.4)' }}>
+              ›
+            </button>
+          </>
+        )}
+      </div>
+      <p className="mt-2 min-h-[1.2em] text-center text-[0.78rem]" style={{ color: 'var(--c-muted)' }}>
+        {cur?.caption}
+      </p>
+      {photos.length > 1 && (
+        <div ref={strip} className="no-scrollbar -mx-6 mt-2 flex gap-1.5 overflow-x-auto px-6 pb-1" style={{ overscrollBehaviorX: 'contain' }}>
+          {photos.map((p, i) => {
+            const on = i === idx
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={`${i + 1}번째 사진 보기`}
+                aria-current={on ? 'true' : undefined}
+                className="tap relative h-[64px] w-[52px] shrink-0 overflow-hidden rounded-[6px]"
+                style={{
+                  filter: on ? 'none' : 'grayscale(1)',
+                  opacity: on ? 1 : 0.6,
+                  outline: on ? '1.5px solid var(--c-text)' : 'none',
+                  outlineOffset: 2,
+                  transition: 'filter .35s ease, opacity .35s ease',
+                }}
+              >
+                <Img image={p.image} aspect="original" fill style={{ position: 'absolute', inset: 0, height: '100%' }} />
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function GallerySection({ section, selected }: { section: SectionOf<'gallery'>; selected?: boolean }) {
   const s = section.settings
   const [open, setOpen] = useState<number | null>(null)
   const [expanded, setExpanded] = useState(false)
   const photos = s.photos.filter((p) => imageSrc(p.image))
-  const limit = s.layout === 'slide' || expanded ? photos.length : Math.max(1, s.initialCount || photos.length)
+  const limit = s.layout === 'slide' || s.layout === 'carousel' || expanded ? photos.length : Math.max(1, s.initialCount || photos.length)
   const visible = photos.slice(0, limit)
 
   return (
@@ -110,6 +209,8 @@ export function GallerySection({ section, selected }: { section: SectionOf<'gall
         <p className="text-[0.86rem]" style={{ color: 'var(--c-muted)' }}>
           곧 사진이 채워질 예정이에요.
         </p>
+      ) : s.layout === 'carousel' ? (
+        <Carousel photos={photos} aspect={s.carouselAspect || '4:5'} open={setOpen} />
       ) : s.layout === 'slide' ? (
         <Slider photos={photos} open={setOpen} />
       ) : s.layout === 'editorial' ? (
@@ -123,7 +224,7 @@ export function GallerySection({ section, selected }: { section: SectionOf<'gall
           ))}
         </div>
       )}
-      {s.layout !== 'slide' && photos.length > limit && (
+      {s.layout !== 'slide' && s.layout !== 'carousel' && photos.length > limit && (
         <button type="button" className="tap btn-ghost mt-8 inline-flex items-center gap-2" onClick={() => setExpanded(true)}>
           사진 더보기 <span style={{ color: 'var(--c-muted)' }}>+{photos.length - limit}</span>
         </button>

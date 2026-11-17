@@ -16,7 +16,9 @@
 ## 1. Supabase 준비 (약 10분)
 
 1. [supabase.com](https://supabase.com) 에서 새 프로젝트를 만듭니다. 리전은 `Northeast Asia (Seoul)`을 추천해요.
-2. **SQL Editor**에 `supabase/migrations/20261117000000_init.sql` 전체를 붙여 넣고 실행합니다.
+2. **SQL Editor**에서 `supabase/migrations/` 폴더의 SQL 파일을 **이름 순서대로** 하나씩 붙여 넣고 실행합니다.
+   - `20261117000000_init.sql` (기본)
+   - `20261118000000_versions.sql` (여러 버전 기능) — 이미 첫 번째 파일을 실행했다면 이 파일만 추가로 실행하세요.
    - 또는 CLI를 쓴다면: `npx supabase link --project-ref <ref>` 다음 `npx supabase db push`
    - 테이블, 보안 정책(RLS), 스토리지 버킷(`media`, `guest-photos`), 기본 청첩장(`our-wedding`)이 함께 만들어집니다.
 3. **Authentication → Sign In / Providers → Email**
@@ -51,7 +53,8 @@
 - 축하글: 작성 허용/목록 공개 스위치, 숨기기·삭제, 하객의 삭제 요청 확인 (게시 없이 즉시 적용)
 - 하객 사진: 승인 후 공개(기본), 일괄 승인·비공개·삭제, 개별 다운로드와 ZIP 일괄 다운로드
 - 공유 · 배포: 링크 복사, QR 코드 PNG, 카카오톡 공유, 문자 보내기, 링크 미리보기(제목·설명·대표 이미지)
-- 버전 기록: 게시할 때마다 버전이 저장되고(최근 50개) 초안으로 불러오거나 바로 되돌릴 수 있어요. 게시 중지도 여기서 합니다.
+- 여러 버전: 화면 왼쪽 위 버전 이름을 누르면 버전을 바꾸거나 새로 만들 수 있어요. 버전마다 주소(`/invite/주소`)·내용·게시가 따로이고, 축하글·하객 사진·이미지·관리자는 함께 씁니다.
+- 게시 기록: 게시할 때마다 기록이 저장되고(최근 50개) 초안으로 불러오거나 바로 되돌릴 수 있어요. 게시 중지도 여기서 합니다.
 
 **선택 설정 (카카오)**
 - 카카오톡 공유: [developers.kakao.com](https://developers.kakao.com)에서 앱을 만들고, *플랫폼 → Web*에 사이트 도메인을 등록하세요. 그다음 JavaScript 키를 **공유 · 배포**에 입력합니다.

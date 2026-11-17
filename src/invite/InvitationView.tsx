@@ -16,6 +16,7 @@ import { GuestbookSection } from './sections/GuestbookSection'
 import { PhotographerSection } from './sections/PhotographerSection'
 import { ThankYouSection } from './sections/ThankYouSection'
 import { TextSection } from './sections/TextSection'
+import { GreetingSection } from './sections/GreetingSection'
 
 export interface ViewOptions {
   selectedId?: string | null
@@ -65,6 +66,8 @@ function renderSection(s: Section, selected: boolean, ready: boolean) {
       return <ThankYouSection key={s.id} section={s} selected={selected} />
     case 'text':
       return <TextSection key={s.id} section={s} selected={selected} />
+    case 'greeting':
+      return <GreetingSection key={s.id} section={s} selected={selected} />
     default:
       return null
   }

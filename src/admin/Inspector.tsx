@@ -342,11 +342,15 @@ function GalleryEditor({ id }: { id: string }) {
           value={s.layout}
           onChange={(v) => set((x) => void (x.layout = v))}
           options={[
-            { value: 'grid', label: '미니멀 그리드' },
+            { value: 'carousel', label: '큰사진+썸네일' },
+            { value: 'grid', label: '그리드' },
             { value: 'slide', label: '슬라이드' },
             { value: 'editorial', label: '에디토리얼' },
           ]}
         />
+        {s.layout === 'carousel' && (
+          <Select label="큰 사진 비율" value={s.carouselAspect || '4:5'} onChange={(v) => set((x) => void (x.carouselAspect = v))} options={ASPECTS.filter((a) => a.value !== 'original')} />
+        )}
         {s.layout === 'grid' && (
           <Segmented
             label="열 수"
@@ -358,7 +362,7 @@ function GalleryEditor({ id }: { id: string }) {
             ]}
           />
         )}
-        {s.layout !== 'slide' && (
+        {(s.layout === 'grid' || s.layout === 'editorial') && (
           <NumberInput label="처음에 보여줄 사진 수" value={s.initialCount} min={1} max={200} onChange={(v) => set((x) => void (x.initialCount = v ?? 9))} hint="나머지는 ‘사진 더보기’로 펼쳐집니다." />
         )}
       </Group>
@@ -640,6 +644,21 @@ function TextEditor({ id }: { id: string }) {
   )
 }
 
+function GreetingEditor({ id }: { id: string }) {
+  const { s, set } = useSection<'greeting'>(id)
+  return (
+    <Group title="초대 글 + 사진">
+      <TextInput label="영문 제목" value={s.eyebrow} onChange={(v) => set((x) => void (x.eyebrow = v))} />
+      <TextInput label="제목" value={s.title} onChange={(v) => set((x) => void (x.title = v))} />
+      <TextArea label="초대 글" value={s.body} rows={8} onChange={(v) => set((x) => void (x.body = v))} hint="줄바꿈한 그대로 보여요." />
+      <ImageField label="사진" value={s.photo} aspect={s.aspect} onChange={(v) => set((x) => void (x.photo = v))} onAspectChange={(a) => set((x) => void (x.aspect = a))} />
+      <Select label="사진 비율" value={s.aspect} onChange={(v) => set((x) => void (x.aspect = v))} options={ASPECTS} />
+      <Slider label="모서리 둥글기" min={0} max={60} value={s.radius} onChange={(v) => set((x) => void (x.radius = v))} format={(n) => `${n}px`} />
+      <TextInput label="사진 아래 문구 (선택)" value={s.caption} onChange={(v) => set((x) => void (x.caption = v))} />
+    </Group>
+  )
+}
+
 const EDITORS: Record<SectionType, (p: { id: string }) => ReactNode> = {
   envelope: EnvelopeEditor,
   main: MainEditor,
@@ -652,6 +671,7 @@ const EDITORS: Record<SectionType, (p: { id: string }) => ReactNode> = {
   photographer: PhotographerEditor,
   thankyou: ThankYouEditor,
   text: TextEditor,
+  greeting: GreetingEditor,
 }
 
 export function SectionInspector({ section }: { section: Section }) {

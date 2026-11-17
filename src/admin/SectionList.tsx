@@ -141,7 +141,10 @@ export function SectionList({ selectedId, onSelect }: { selectedId: string | nul
   function add(type: SectionType) {
     const sec = createSection(type)
     update((d) => {
-      if (type === 'envelope') d.sections.unshift(sec)
+      if (type === 'envelope') return void d.sections.unshift(sec)
+      // 선택한 페이지 바로 아래에 추가 (없으면 맨 끝)
+      const at = d.sections.findIndex((x) => x.id === selectedId)
+      if (at >= 0) d.sections.splice(at + 1, 0, sec)
       else d.sections.push(sec)
     })
     onSelect(sec.id)

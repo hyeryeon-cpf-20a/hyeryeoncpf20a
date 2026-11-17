@@ -108,6 +108,10 @@ export async function uploadGuestPhoto(
 export interface AdminInvitation {
   id: string
   slug: string
+  name: string
+  parent_id: string | null
+  /** 축하글·하객사진·이미지·관리자·운영 스위치가 모이는 기본 청첩장 id */
+  data_id: string
   draft: InvitationContent
   published: InvitationContent | null
   is_published: boolean
@@ -136,12 +140,64 @@ export async function loadAdminInvitation(slug: string): Promise<AdminInvitation
     | (Omit<AdminInvitation, 'draft' | 'published'> & { draft: unknown; published: unknown })
     | null
   if (!row) throw new Error('NOT_ADMIN')
+  // 버전이면 운영 스위치는 기본 청첩장 값을 사용
+  if (row.parent_id) {
+    const root = unwrap(
+      await sb
+        .from('invitations')
+        .select('guestbook_enabled, guestbook_public, uploads_enabled, uploads_public, uploads_require_approval')
+        .eq('id', row.parent_id)
+        .single(),
+    ) as AdminFlags
+    Object.assign(row, root)
+  }
+  ;(row as { data_id: string }).data_id = row.parent_id ?? row.id
   const empty = !row.draft || (typeof row.draft === 'object' && !Array.isArray((row.draft as { sections?: unknown }).sections))
   return {
     ...row,
     draft: empty ? defaultContent() : normalizeContent(row.draft),
     published: row.published ? normalizeContent(row.published) : null,
   }
+}
+
+// ------------------------------------------------------------------ 여러 버전
+
+export interface VersionInfo {
+  id: string
+  slug: string
+  name: string
+  parent_id: string | null
+  is_published: boolean
+  published_at: string | null
+  created_at: string
+}
+
+export async function listInvitationGroup(dataId: string): Promise<VersionInfo[]> {
+  const sb = requireClient()
+  const rows: VersionInfo[] =
+    unwrap(
+      await sb
+        .from('invitations')
+        .select('id, slug, name, parent_id, is_published, published_at, created_at')
+        .or(`id.eq.${dataId},parent_id.eq.${dataId}`)
+        .order('created_at', { ascending: true }),
+    ) ?? []
+  return rows.sort((a, b) => (a.parent_id ? 1 : 0) - (b.parent_id ? 1 : 0))
+}
+
+export async function createVersion(sourceId: string, name: string, slug: string) {
+  const sb = requireClient()
+  return unwrap(await sb.rpc('create_invitation_version', { p_source: sourceId, p_name: name, p_slug: slug })) as { id: string; slug: string }
+}
+
+export async function deleteVersion(id: string) {
+  const sb = requireClient()
+  unwrap(await sb.rpc('delete_invitation_version', { p_id: id }))
+}
+
+export async function renameVersion(id: string, name: string) {
+  const sb = requireClient()
+  unwrap(await sb.from('invitations').update({ name }).eq('id', id).select('id').single())
 }
 
 export async function saveDraft(id: string, draft: InvitationContent): Promise<string> {

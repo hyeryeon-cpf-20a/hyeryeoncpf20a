@@ -12,6 +12,7 @@ export type SectionType =
   | 'photographer'
   | 'thankyou'
   | 'text'
+  | 'greeting'
 
 export type Aspect = 'original' | '1:1' | '4:5' | '3:4' | '2:3' | '3:5' | '9:16' | '4:3' | '3:2' | '16:9'
 
@@ -123,7 +124,8 @@ export interface GalleryPhoto {
 export interface GallerySettings {
   eyebrow: string
   title: string
-  layout: 'grid' | 'slide' | 'editorial'
+  layout: 'carousel' | 'grid' | 'slide' | 'editorial'
+  carouselAspect: Aspect // 큰 사진 비율 (슬라이드+썸네일)
   columns: 2 | 3
   photos: GalleryPhoto[]
   initialCount: number // 처음 보여줄 사진 수 (나머지는 더보기)
@@ -201,6 +203,16 @@ export interface ThankYouSettings {
   effect: 'petals' | 'light' | 'none'
 }
 
+export interface GreetingSettings {
+  eyebrow: string // INVITATION
+  title: string // 소중한 분들을 초대합니다
+  body: string
+  photo: ImageRef | null
+  aspect: Aspect
+  radius: number // 사진 모서리 둥글기(px)
+  caption: string // 사진 아래 문구 (선택)
+}
+
 export interface TextSettings {
   eyebrow: string
   title: string
@@ -221,6 +233,7 @@ export type Section =
   | SectionBase<'photographer', PhotographerSettings>
   | SectionBase<'thankyou', ThankYouSettings>
   | SectionBase<'text', TextSettings>
+  | SectionBase<'greeting', GreetingSettings>
 
 export type SectionOf<T extends SectionType> = Extract<Section, { type: T }>
 export type SettingsOf<T extends SectionType> = SectionOf<T>['settings']
@@ -281,7 +294,9 @@ export interface InvitationContent {
 }
 
 export interface PublicInvitation {
+  /** 축하글·사진이 모이는 기본 청첩장 id */
   id: string
+  version_id?: string
   slug: string
   content: InvitationContent
   published_at: string | null

@@ -14,6 +14,7 @@ import { SharePanel } from './SharePanel'
 import { VersionsPanel } from './VersionsPanel'
 import { SettingsPanel } from './SettingsPanel'
 import { Btn } from './ui'
+import { VersionManager } from './VersionManager'
 import type { PreviewMessage } from '../invite/PreviewPage'
 
 type View = 'edit' | 'guestbook' | 'photos' | 'share' | 'versions' | 'settings' | 'media'
@@ -28,7 +29,18 @@ const DEVICES = [
 
 const clone = <T,>(v: T): T => (typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v)))
 
-export function Editor({ initial, email, onSignOut }: { initial: AdminInvitation; email: string; onSignOut: () => void }) {
+export function Editor({
+  initial,
+  email,
+  onSignOut,
+  onSwitchVersion,
+}: {
+  initial: AdminInvitation
+  email: string
+  onSignOut: () => void
+  onSwitchVersion: (slug: string) => void
+}) {
+  const [versionsOpen, setVersionsOpen] = useState(false)
   const [inv, setInv] = useState(initial)
   const [draft, setDraft] = useState<InvitationContent>(initial.draft)
   const [saveState, setSaveState] = useState<SaveState>('saved')
@@ -189,7 +201,7 @@ export function Editor({ initial, email, onSignOut }: { initial: AdminInvitation
       const before = inv
       setInv((x) => ({ ...x, ...p }))
       try {
-        await updateFlags(inv.id, p)
+        await updateFlags(inv.data_id, p)
         toast('적용했어요')
       } catch (e) {
         setInv(before)
@@ -203,7 +215,7 @@ export function Editor({ initial, email, onSignOut }: { initial: AdminInvitation
   const runtimeFlags: RuntimeFlags = useMemo(
     () => ({
       slug: inv.slug,
-      invitationId: inv.id,
+      invitationId: inv.data_id,
       guestbookEnabled: inv.guestbook_enabled,
       guestbookPublic: inv.guestbook_public,
       uploadsEnabled: inv.uploads_enabled,
@@ -278,7 +290,7 @@ export function Editor({ initial, email, onSignOut }: { initial: AdminInvitation
     [],
   )
 
-  const ctx: EditorCtx = { invitationId: inv.id, slug: inv.slug, draft, update, toast, pickImages }
+  const ctx: EditorCtx = { invitationId: inv.data_id, slug: inv.slug, draft, update, toast, pickImages }
   const selected = draft.sections.find((s) => s.id === selectedId)
 
   const NAV: { id: View; label: string }[] = [
@@ -287,7 +299,7 @@ export function Editor({ initial, email, onSignOut }: { initial: AdminInvitation
     { id: 'photos', label: '하객 사진' },
     { id: 'media', label: '이미지' },
     { id: 'share', label: '공유 · 배포' },
-    { id: 'versions', label: '버전 기록' },
+    { id: 'versions', label: '게시 기록' },
     { id: 'settings', label: '설정' },
   ]
 
@@ -305,7 +317,15 @@ export function Editor({ initial, email, onSignOut }: { initial: AdminInvitation
         <header className="flex shrink-0 items-center gap-2 border-b border-stone-200 bg-white px-3 py-2 sm:px-4">
           <div className="mr-1 flex items-center gap-2">
             <span className="font-script text-[22px] leading-none text-[#514A43]">w</span>
-            <span className="hidden text-[13px] font-semibold md:inline">청첩장 관리</span>
+            <button
+              type="button"
+              onClick={() => setVersionsOpen(true)}
+              className="flex max-w-[180px] items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-[12.5px] font-semibold text-stone-800 hover:bg-stone-50"
+              title="청첩장 버전 바꾸기 · 새 버전 만들기"
+            >
+              <span className="truncate">{inv.name || '기본 버전'}</span>
+              <span className="text-stone-400">▾</span>
+            </button>
           </div>
           <nav className="no-scrollbar flex min-w-0 flex-1 gap-0.5 overflow-x-auto">
             {NAV.map((n) => (
@@ -457,8 +477,8 @@ export function Editor({ initial, email, onSignOut }: { initial: AdminInvitation
           </div>
         ) : (
           <main className="min-h-0 flex-1 overflow-y-auto">
-            {view === 'guestbook' && <GuestbookManager invitationId={inv.id} flags={flags} setFlags={setFlags} toast={toast} />}
-            {view === 'photos' && <PhotoManager invitationId={inv.id} flags={flags} setFlags={setFlags} toast={toast} />}
+            {view === 'guestbook' && <GuestbookManager invitationId={inv.data_id} flags={flags} setFlags={setFlags} toast={toast} />}
+            {view === 'photos' && <PhotoManager invitationId={inv.data_id} flags={flags} setFlags={setFlags} toast={toast} />}
             {view === 'share' && <SharePanel published={inv.published} isPublished={inv.is_published} />}
             {view === 'versions' && (
               <VersionsPanel
@@ -475,7 +495,7 @@ export function Editor({ initial, email, onSignOut }: { initial: AdminInvitation
                 }}
               />
             )}
-            {view === 'settings' && <SettingsPanel invitationId={inv.id} email={email} toast={toast} />}
+            {view === 'settings' && <SettingsPanel invitationId={inv.data_id} email={email} toast={toast} />}
             {view === 'media' && (
               <div className="mx-auto max-w-4xl p-6">
                 <h1 className="text-[20px] font-semibold text-stone-800">이미지 라이브러리</h1>
@@ -488,8 +508,27 @@ export function Editor({ initial, email, onSignOut }: { initial: AdminInvitation
           </main>
         )}
 
+        <VersionManager
+          open={versionsOpen}
+          onClose={() => setVersionsOpen(false)}
+          dataId={inv.data_id}
+          currentId={inv.id}
+          currentName={inv.name || '기본 버전'}
+          toast={toast}
+          onSwitch={async (slug) => {
+            // 바꾸기 전에 지금 버전 저장
+            if (saveTimer.current) clearTimeout(saveTimer.current)
+            try {
+              await doSave()
+            } catch {
+              return
+            }
+            setVersionsOpen(false)
+            onSwitchVersion(slug)
+          }}
+        />
         <MediaLibrary
-          invitationId={inv.id}
+          invitationId={inv.data_id}
           open={!!media}
           multiple={media?.multiple}
           toast={toast}
