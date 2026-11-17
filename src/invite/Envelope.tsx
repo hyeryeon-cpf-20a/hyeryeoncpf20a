@@ -117,9 +117,13 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
     const d = 1.35 * k
     void animate(bg.current!, { opacity: 0 }, { duration: 0.6 * k, ease: 'easeOut' })
     root.current!.querySelectorAll('.env-back').forEach((el) => void animate(el, { opacity: 0 }, { duration: 0.6 * k, ease: 'easeOut' }))
-    void animate(flapEl, { opacity: 0 }, { duration: 0.5 * k })
-    void animate(pageY, 0, { duration: d, ease: EASE })
-    await animate(pocket.current!, { y: (vh * 1.05) / Math.max(0.2, camY.get()) }, { duration: d, ease: EASE })
+    // 위 덮개와 아래 봉투가 제자리에서 함께 흐려지며 사라짐
+    const fade = { duration: 0.8 * k, ease: 'easeOut' as const }
+    await Promise.all([
+      animate(pageY, 0, { duration: d, ease: EASE }),
+      animate(flapEl, { opacity: 0 }, fade),
+      animate(pocket.current!, { opacity: 0 }, fade),
+    ])
     setPhase('done')
     onOpened()
   }

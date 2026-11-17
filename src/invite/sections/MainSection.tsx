@@ -4,15 +4,12 @@ import { formatEnDate, parseWedding } from '../../lib/date'
 import { aspectRatio, imageSrc } from '../../lib/image'
 import { useInvite } from '../context'
 import { Img } from '../ui/Img'
-import { Reveal } from '../ui/Reveal'
 import { SectionShell } from '../SectionShell'
 
-export function MainSection({ section, selected, ready }: { section: SectionOf<'main'>; selected?: boolean; ready: boolean }) {
-  const { content, motionOn, speed } = useInvite()
+export function MainSection({ section, selected }: { section: SectionOf<'main'>; selected?: boolean; ready?: boolean }) {
+  const { content } = useInvite()
   const s = section.settings
   const date = parseWedding(content.wedding)
-  const anim = section.style.animation.enabled && motionOn
-  const d = section.style.animation.duration / speed
   const oval = s.photoShape !== 'rect'
   const aspect = oval ? '3:5' : s.aspect
   const ratio = aspectRatio(aspect, s.photo) ?? 0.75
@@ -37,9 +34,8 @@ export function MainSection({ section, selected, ready }: { section: SectionOf<'
             transformOrigin: '0 0',
             transform: `scale(4) translate(${-Math.min(0.15, s.bgBlur / 160) * 100}%, ${-Math.min(0.15, s.bgBlur / 160) * 100}%) scale(${1 + Math.min(0.3, s.bgBlur / 80)})`,
           }}
-          initial={anim ? { opacity: 0 } : { opacity: s.bgOpacity }}
-          animate={ready ? { opacity: s.bgOpacity } : undefined}
-          transition={{ duration: d * 1.8, ease: 'easeOut' }}
+          initial={false}
+          animate={{ opacity: s.bgOpacity }}
         />
         <div
           className="absolute inset-0"
@@ -53,9 +49,7 @@ export function MainSection({ section, selected, ready }: { section: SectionOf<'
         <motion.h1
           className="font-script leading-[1.05]"
           style={{ fontSize: `calc(${s.namesSize}rem * var(--title-scale, 1))`, color: 'var(--c-text)' }}
-          initial={anim ? { opacity: 0, y: 14 } : false}
-          animate={ready ? { opacity: 1, y: 0 } : undefined}
-          transition={{ duration: d * 1.1, ease: [0.22, 0.61, 0.36, 1], delay: 0.15 / speed }}
+          initial={false}
         >
           {s.namesEn}
         </motion.h1>
@@ -67,22 +61,19 @@ export function MainSection({ section, selected, ready }: { section: SectionOf<'
             width: oval ? `min(76%, calc((100svh - 300px) * ${ratio.toFixed(4)}))` : `min(100%, calc((100svh - 300px) * ${ratio.toFixed(4)}))`,
             minWidth: oval ? '52%' : '62%',
           }}
-          initial={anim ? { opacity: 0 } : false}
-          animate={ready ? { opacity: 1 } : undefined}
-          transition={{ duration: d * 1.6, delay: 0.55 / speed, ease: 'easeOut' }}
+          initial={false}
         >
           <Img
             image={s.photo}
             aspect={aspect}
             radius={oval ? '50%' : s.photoRadius >= 200 ? '999px 999px 0 0' : s.photoRadius}
-            zoomIn
             eager
             alt="신랑 신부 메인 사진"
             style={oval ? { boxShadow: '0 20px 50px -24px rgba(81,74,67,.45)' } : undefined}
           />
         </motion.div>
 
-        <Reveal className="mt-8" delay={0.9}>
+        <div className="mt-8">
           <p className="font-serif-en text-[0.95rem] tracking-[0.34em]" style={{ fontSize: `calc(0.95rem * var(--body-scale,1))` }}>
             {s.dateText || formatEnDate(date)}
           </p>
@@ -91,7 +82,7 @@ export function MainSection({ section, selected, ready }: { section: SectionOf<'
               {s.fromText}
             </p>
           )}
-        </Reveal>
+        </div>
       </div>
     </SectionShell>
   )
