@@ -101,7 +101,7 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
   const [envOpen, setEnvOpen] = useState(initiallyClosed)
   const [ready, setReady] = useState(!initiallyClosed())
   // 봉투 안에서 메인 화면이 올라오는 효과: 처음에는 아래로 내려가 있음
-  const startOffset = () => (typeof window !== 'undefined' ? window.innerHeight * 0.42 : 300)
+  const startOffset = () => 0
   const pageY = useMotionValue(envOpen ? startOffset() : 0)
 
   // 관리자 미리보기: 봉투 다시 보기 / 봉투 끄기
@@ -154,6 +154,7 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
           key={options.envelopeKey ?? 0}
           section={envelope}
           pageY={pageY}
+          cardSection={visible[0]?.type === 'main' ? (visible[0] as SectionOf<'main'>) : undefined}
           onReveal={() => setReady(true)}
           onOpened={() => {
             safeStorage().set(storeKey, '1')
