@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { motion, useMotionValue } from 'framer-motion'
 import type { InvitationContent, RuntimeFlags, Section, SectionOf } from '../lib/types'
 import { fontStack, loadFonts } from '../lib/fonts'
 import { prefersReducedMotion, safeStorage } from '../lib/util'
@@ -90,6 +91,9 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
   }
   const [envOpen, setEnvOpen] = useState(initiallyClosed)
   const [ready, setReady] = useState(!initiallyClosed())
+  // 봉투 안에서 메인 화면이 올라오는 효과: 처음에는 아래로 내려가 있음
+  const startOffset = () => (typeof window !== 'undefined' ? window.innerHeight * 0.42 : 300)
+  const pageY = useMotionValue(envOpen ? startOffset() : 0)
 
   // 관리자 미리보기: 봉투 다시 보기 / 봉투 끄기
   useEffect(() => {
@@ -97,6 +101,7 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
     const closed = initiallyClosed()
     setEnvOpen(closed)
     setReady(!closed)
+    pageY.set(closed ? startOffset() : 0)
     if (closed) window.scrollTo(0, 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.envelopeKey, options.skipEnvelope, !!envelope])
@@ -116,7 +121,7 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
             : undefined
         }
       >
-        <main>{visible.map((s) => renderSection(s, options.selectedId === s.id, ready))}</main>
+        <motion.main style={{ y: pageY }}>{visible.map((s) => renderSection(s, options.selectedId === s.id, ready))}</motion.main>
         {visible.length === 0 && (
           <div className="flex min-h-[100svh] items-center justify-center text-[0.9rem]" style={{ color: 'var(--c-muted)' }}>
             표시할 섹션이 없어요.
@@ -128,9 +133,11 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
         <Envelope
           key={options.envelopeKey ?? 0}
           section={envelope}
+          pageY={pageY}
+          onReveal={() => setReady(true)}
           onOpened={() => {
             safeStorage().set(storeKey, '1')
-            window.scrollTo(0, 0)
+            pageY.set(0)
             setEnvOpen(false)
             setReady(true)
           }}

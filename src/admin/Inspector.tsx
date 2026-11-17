@@ -153,7 +153,6 @@ function EnvelopeEditor({ id }: { id: string }) {
             { value: 'felt', label: '펠트 (결이 있는 종이)' },
           ]}
         />
-        <TextInput label="카드 문구" value={s.cardText} onChange={(v) => set((x) => void (x.cardText = v))} />
         <TextInput label="안내 문구" value={s.hint} onChange={(v) => set((x) => void (x.hint = v))} />
       </Group>
       <Group title="실링왁스">

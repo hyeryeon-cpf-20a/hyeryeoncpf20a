@@ -1,13 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { animate, motion, useMotionValue } from 'framer-motion'
+import { animate, motion, useMotionValue, type MotionValue } from 'framer-motion'
 import type { SectionOf } from '../lib/types'
-import { formatEnDate, parseWedding } from '../lib/date'
 import { WaxSeal } from './WaxSeal'
 import { useInvite } from './context'
 
 interface Props {
   section: SectionOf<'envelope'>
   onOpened: () => void
+  /** 메인 화면이 올라오기 시작할 때 (메인 진입 애니메이션 시작) */
+  onReveal: () => void
+  /** 뒤에 있는 메인 화면의 세로 위치 (봉투 안에서 올라오는 효과) */
+  pageY: MotionValue<number>
 }
 
 const EASE = [0.65, 0, 0.35, 1] as const
@@ -15,12 +18,11 @@ const SOFT = [0.22, 0.61, 0.36, 1] as const
 const FLAP = 0.58 // 덮개 높이 (봉투 높이 대비) — 실링왁스가 붙는 위치
 
 /**
- * 실링왁스 봉투 오프닝
- * (클로즈업 시작) 화면 가득 찬 봉투와 큰 실링왁스
- * 1) 왁스가 눌림 → 2) 봉인 해제(떨어짐) → 화면이 물러나며 봉투 전체가 보임
- * 3) 덮개가 위로 접히며 열림 → 4) 카드 상승 → 5) 카드 확대 → 6) 다음 섹션
+ * 실링왁스 봉투 오프닝 (봉투 크기는 그대로)
+ * 1) 왁스가 눌림 → 2) 봉인 해제(떨어짐) → 3) 덮개가 위로 접히며 열림
+ * 4) 봉투 안에서 메인 화면이 위로 올라오고, 봉투는 아래로 내려가며 사라짐 → 메인 화면
  */
-export function Envelope({ section, onOpened }: Props) {
+export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
   const { content, motionOn } = useInvite()
   const s = section.settings
   const closeup = s.startView !== 'full'
@@ -31,11 +33,11 @@ export function Envelope({ section, onOpened }: Props) {
   const sealWrap = useRef<HTMLDivElement>(null)
   const seal = useRef<HTMLButtonElement>(null)
   const flap = useRef<HTMLDivElement>(null)
-  const card = useRef<HTMLDivElement>(null)
+  const back = useRef<HTMLDivElement>(null)
+  const bg = useRef<HTMLDivElement>(null)
   const pocket = useRef<HTMLDivElement>(null)
   const hint = useRef<HTMLParagraphElement>(null)
   const eyebrow = useRef<HTMLParagraphElement>(null)
-  const date = parseWedding(content.wedding)
   const k = 1 / Math.max(0.3, (s.speed || 1) * (content.animation.speed || 1))
   const [vp, setVp] = useState({ w: 390, h: 844, ew: 328, eh: 225 })
 
@@ -87,45 +89,31 @@ export function Envelope({ section, onOpened }: Props) {
     }
     const sealEl = seal.current!
     const flapEl = flap.current!
-    const cardEl = card.current!
-    const envEl = env.current!
+    const vh = window.innerHeight
 
     void animate(hint.current!, { opacity: 0 }, { duration: 0.3 * k })
     // 1. 눌림
-    await animate(sealEl, { scale: 0.9 }, { duration: 0.16 * k, ease: 'easeOut' })
-    await animate(sealEl, { scale: 1.03 }, { duration: 0.22 * k, ease: SOFT })
-    // 2. 봉인 해제 — 살짝 들렸다가 떨어짐
-    await animate(sealEl, { y: -8, rotate: -6 }, { duration: 0.18 * k, ease: 'easeOut' })
-    void animate(sealEl, { y: closeup ? 260 : 120, rotate: 28, opacity: 0, scale: 0.85 }, { duration: 0.75 * k, ease: [0.55, 0, 0.75, 0.4] })
-    await new Promise((r) => setTimeout(r, 300 * k))
-    // 클로즈업이었다면 화면이 물러나며 봉투 전체가 보임
-    if (closeup) {
-      void animate(eyebrow.current!, { opacity: 1 }, { duration: 0.8 * k, delay: 0.4 * k })
-      await Promise.all([animate(camX, 1, { duration: 1.1 * k, ease: EASE }), animate(camY, 1, { duration: 1.1 * k, ease: EASE })])
-    }
-    // 3. 덮개가 위로 접히며 열림 (절반 지나면 카드 뒤로)
+    await animate(sealEl, { scale: 0.92 }, { duration: 0.18 * k, ease: 'easeOut' })
+    await animate(sealEl, { scale: 1.02 }, { duration: 0.24 * k, ease: SOFT })
+    // 2. 봉인 해제 — 살짝 들렸다가 부드럽게 떨어짐
+    await animate(sealEl, { y: -6, rotate: -5 }, { duration: 0.2 * k, ease: 'easeOut' })
+    void animate(sealEl, { y: vh * 0.35, rotate: 24, opacity: 0, scale: 0.9 }, { duration: 0.8 * k, ease: [0.55, 0, 0.75, 0.4] })
+    await new Promise((r) => setTimeout(r, 320 * k))
+    // 3. 덮개가 위로 접히며 열림 (절반 지나면 뒤로)
+    void animate(eyebrow.current!, { opacity: 0 }, { duration: 0.4 * k })
     const flapAnim = animate(flapEl, { rotateX: 180 }, { duration: 1.0 * k, ease: EASE })
     setTimeout(() => {
       flapEl.style.zIndex = '1'
     }, 500 * k)
     await flapAnim
-    // 4. 카드가 위로 올라옴
-    const envH = envEl.getBoundingClientRect().height
-    await animate(cardEl, { y: -envH * 0.62 }, { duration: 1.05 * k, ease: SOFT })
-    // 5. 카드가 앞으로 나와 화면 가득 확대
-    cardEl.style.zIndex = '6'
-    const rect = cardEl.getBoundingClientRect()
-    const vw = window.innerWidth
-    const vh = window.innerHeight
-    const scale = Math.max(vw / rect.width, vh / rect.height) * 1.04
-    const dy = vh / 2 - (rect.top + rect.height / 2)
-    void animate(pocket.current!, { opacity: 0, y: 40 }, { duration: 0.7 * k, ease: 'easeIn' })
+    // 4. 봉투 안쪽이 걷히며 메인 화면이 보이고 → 메인은 위로, 봉투는 아래로
+    onReveal()
+    const d = 1.35 * k
+    void animate(bg.current!, { opacity: 0 }, { duration: 0.6 * k, ease: 'easeOut' })
+    void animate(back.current!, { opacity: 0 }, { duration: 0.6 * k, ease: 'easeOut' })
     void animate(flapEl, { opacity: 0 }, { duration: 0.5 * k })
-    void animate(eyebrow.current!, { opacity: 0 }, { duration: 0.4 * k })
-    void animate(envEl.querySelector('.env-back')!, { opacity: 0 }, { duration: 0.6 * k })
-    await animate(cardEl, { y: -envH * 0.62 + dy, scale }, { duration: 1.1 * k, ease: EASE })
-    // 6. 다음 섹션으로
-    await animate(root.current!, { opacity: 0 }, { duration: 0.7 * k, ease: 'easeOut' })
+    void animate(pageY, 0, { duration: d, ease: EASE })
+    await animate(pocket.current!, { y: (vh * 1.05) / Math.max(0.2, camY.get()) }, { duration: d, ease: EASE })
     setPhase('done')
     onOpened()
   }
@@ -136,13 +124,14 @@ export function Envelope({ section, onOpened }: Props) {
     <motion.div
       ref={root}
       className="fixed inset-0 z-[60] overflow-hidden"
-      style={{ background: 'var(--c-bg)', touchAction: 'none' }}
+      style={{ touchAction: 'none' }}
       initial={motionOn ? { opacity: 0 } : false}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
       role="dialog"
       aria-label="청첩장 봉투"
     >
+      <div ref={bg} aria-hidden className="pointer-events-none absolute inset-0" style={{ background: 'var(--c-bg)' }}>
       {/* 은은한 자연광 */}
       <div
         aria-hidden
@@ -152,6 +141,7 @@ export function Envelope({ section, onOpened }: Props) {
             'radial-gradient(120% 70% at 20% 0%, rgba(255,255,255,.9), rgba(255,255,255,0) 60%), radial-gradient(90% 60% at 100% 100%, color-mix(in srgb, var(--c-sage) 18%, transparent), transparent 70%)',
         }}
       />
+      </div>
 
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative">
@@ -168,6 +158,7 @@ export function Envelope({ section, onOpened }: Props) {
             <div ref={env} className="relative" style={{ width: 'min(84vw, 360px)', aspectRatio: '1.46', perspective: 1400 }}>
               {/* 뒷면 + 안쪽 라이닝 */}
               <div
+                ref={back}
                 className={`env-back absolute inset-0 ${tex}`}
                 style={{
                   backgroundColor: s.envelopeColor,
@@ -177,28 +168,6 @@ export function Envelope({ section, onOpened }: Props) {
                 }}
               >
                 <div className="absolute inset-x-[6%] top-[4%]" style={{ height: `${FLAP * 100 - 4}%`, background: s.liningColor, clipPath: tri, opacity: 0.9 }} />
-              </div>
-
-              {/* 카드 */}
-              <div
-                ref={card}
-                className="paper-cotton absolute bottom-[6%] left-[5%] right-[5%] top-[6%] flex flex-col items-center justify-center"
-                style={{
-                  zIndex: 2,
-                  backgroundColor: 'color-mix(in srgb, var(--c-bg) 70%, white)',
-                  borderRadius: 3,
-                  boxShadow: '0 1px 3px rgba(81,74,67,.1)',
-                  transformOrigin: '50% 50%',
-                  willChange: 'transform',
-                }}
-              >
-                <p className="font-script text-[2rem] leading-none" style={{ color: 'var(--c-text)' }}>
-                  {s.cardText}
-                </p>
-                <div className="my-3 h-px w-10" style={{ background: 'var(--c-accent)', opacity: 0.6 }} />
-                <p className="font-serif-en text-[0.7rem] tracking-[0.3em]" style={{ color: 'var(--c-muted)' }}>
-                  {formatEnDate(date)}
-                </p>
               </div>
 
               {/* 앞주머니 */}
