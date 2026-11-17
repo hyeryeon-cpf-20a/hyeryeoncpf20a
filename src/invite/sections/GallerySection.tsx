@@ -99,14 +99,22 @@ function Carousel({ photos, aspect, open }: { photos: GalleryPhoto[]; aspect: As
   const strip = useRef<HTMLDivElement>(null)
   const [idx, setIdx] = useState(0)
   const raf = useRef(0)
+  // 썸네일을 눌러 이동하는 동안에는 스크롤 중간값으로 번호가 흔들리지 않게 고정
+  const lock = useRef<{ target: number; until: number } | null>(null)
 
   const onMainScroll = () => {
     cancelAnimationFrame(raf.current)
     raf.current = requestAnimationFrame(() => {
       const el = main.current
       if (!el) return
-      const i = Math.round(el.scrollLeft / el.clientWidth)
-      if (i !== idx) setIdx(Math.max(0, Math.min(photos.length - 1, i)))
+      const pos = el.scrollLeft / el.clientWidth
+      const l = lock.current
+      if (l) {
+        if (Math.abs(pos - l.target) < 0.02 || performance.now() > l.until) lock.current = null
+        else return
+      }
+      const i = Math.max(0, Math.min(photos.length - 1, Math.round(pos)))
+      setIdx((cur) => (cur === i ? cur : i))
     })
   }
 
@@ -120,9 +128,12 @@ function Carousel({ photos, aspect, open }: { photos: GalleryPhoto[]; aspect: As
 
   const goTo = (i: number) => {
     const el = main.current
-    if (!el) return
+    if (!el || i === idx) return
+    // 바로 옆 사진은 부드럽게, 멀리 떨어진 사진은 중간 사진들을 거치지 않고 바로 이동
+    const far = Math.abs(i - idx) > 1
+    lock.current = { target: i, until: performance.now() + 900 }
     setIdx(i)
-    el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' })
+    el.scrollTo({ left: i * el.clientWidth, behavior: far ? 'auto' : 'smooth' })
   }
 
   const cur = photos[idx]
@@ -133,7 +144,7 @@ function Carousel({ photos, aspect, open }: { photos: GalleryPhoto[]; aspect: As
           ref={main}
           onScroll={onMainScroll}
           className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto"
-          style={{ overscrollBehaviorX: 'contain', scrollBehavior: 'smooth' }}
+          style={{ overscrollBehaviorX: 'contain' }}
           aria-roledescription="사진 슬라이드"
         >
           {photos.map((p, i) => (
@@ -163,9 +174,10 @@ function Carousel({ photos, aspect, open }: { photos: GalleryPhoto[]; aspect: As
         {cur?.caption}
       </p>
       {photos.length > 1 && (
-        <div ref={strip} className="no-scrollbar -mx-6 mt-2 flex gap-1.5 overflow-x-auto px-6 pb-1" style={{ overscrollBehaviorX: 'contain' }}>
+        <div ref={strip} className="no-scrollbar -mx-6 mt-2 flex gap-1.5 overflow-x-auto px-6 py-[5px]" style={{ overscrollBehaviorX: 'contain' }}>
           {photos.map((p, i) => {
             const on = i === idx
+            const src = imageSrc(p.image)
             return (
               <button
                 key={p.id}
@@ -173,16 +185,29 @@ function Carousel({ photos, aspect, open }: { photos: GalleryPhoto[]; aspect: As
                 onClick={() => goTo(i)}
                 aria-label={`${i + 1}번째 사진 보기`}
                 aria-current={on ? 'true' : undefined}
-                className="tap relative h-[64px] w-[52px] shrink-0 overflow-hidden rounded-[6px]"
+                className="relative h-[64px] w-[52px] shrink-0 overflow-hidden rounded-[6px]"
                 style={{
-                  filter: on ? 'none' : 'grayscale(1)',
-                  opacity: on ? 1 : 0.6,
-                  outline: on ? '1.5px solid var(--c-text)' : 'none',
+                  background: 'var(--c-bg2)',
+                  outline: on ? '1.5px solid var(--c-text)' : '1.5px solid transparent',
                   outlineOffset: 2,
-                  transition: 'filter .35s ease, opacity .35s ease',
                 }}
               >
-                <Img image={p.image} aspect="original" fill style={{ position: 'absolute', inset: 0, height: '100%' }} />
+                {src && (
+                  <img
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    style={{
+                      objectPosition: `${p.image.focusX ?? 50}% ${p.image.focusY ?? 50}%`,
+                      filter: on ? 'none' : 'grayscale(1)',
+                      opacity: on ? 1 : 0.6,
+                      transition: 'opacity .3s ease',
+                    }}
+                  />
+                )}
               </button>
             )
           })}
