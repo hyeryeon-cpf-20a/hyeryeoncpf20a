@@ -49,66 +49,96 @@ export function SideNav({ sections, visible }: { sections: Section[]; visible: b
   }, [showLabel, active])
 
   if (!content.nav.enabled || sections.length < 2) return null
-  const activeSection = sections.find((s) => s.id === active)
+  const activeIndex = Math.max(0, sections.findIndex((s) => s.id === active))
+  const activeSection = sections[activeIndex]
+  const DOT = 26 // 점 하나의 높이
+  const PAD = 6 // 위아래 여백
   return (
     <AnimatePresence>
       {visible && (
-        <motion.nav
-          aria-label="섹션 이동"
-          className={`fixed top-1/2 z-40 flex -translate-y-1/2 items-center ${right ? 'flex-row-reverse' : 'flex-row'}`}
+        // 위치 고정은 바깥 div 가, 나타나기 효과는 안쪽 nav 가 맡아 서로 간섭하지 않음
+        <div
+          className="fixed top-1/2 z-40 -translate-y-1/2"
           style={{ [right ? 'right' : 'left']: 'max(4px, env(safe-area-inset-' + (right ? 'right' : 'left') + ', 0px))' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <ul
-            className="flex flex-col items-center rounded-full py-1.5"
-            style={{ background: 'color-mix(in srgb, var(--c-bg) 55%, transparent)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+          <motion.nav
+            aria-label="섹션 이동"
+            className="relative"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
           >
-            {sections.map((s) => {
-              const on = s.id === active
-              return (
-                <li key={s.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      scrollToSection(s.id)
-                      setShowLabel(true)
-                    }}
-                    aria-label={`${s.label}(으)로 이동`}
-                    aria-current={on ? 'true' : undefined}
-                    className="flex h-[26px] w-[18px] items-center justify-center"
-                  >
-                    <span
-                      className="block w-[5px] rounded-full transition-all duration-300"
-                      style={{
-                        height: on ? 14 : 5,
-                        background: on ? 'var(--c-accent)' : 'var(--c-text)',
-                        opacity: on ? 1 : 0.22,
+            <ul
+              className="flex flex-col items-center rounded-full"
+              style={{
+                paddingTop: PAD,
+                paddingBottom: PAD,
+                background: 'color-mix(in srgb, var(--c-bg) 55%, transparent)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+              }}
+            >
+              {sections.map((s) => {
+                const on = s.id === active
+                return (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        scrollToSection(s.id)
+                        setShowLabel(true)
                       }}
-                    />
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-          <AnimatePresence>
-            {(content.nav.showLabels || showLabel) && activeSection && (
-              <motion.span
-                key={activeSection.id}
-                initial={{ opacity: 0, x: right ? 4 : -4 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="font-serif-en pointer-events-none mx-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[0.64rem] tracking-[0.18em]"
-                style={{ background: 'color-mix(in srgb, var(--c-bg) 70%, transparent)', color: 'var(--c-text)' }}
-              >
-                {activeSection.label.toUpperCase()}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.nav>
+                      aria-label={`${s.label}(으)로 이동`}
+                      aria-current={on ? 'true' : undefined}
+                      className="flex w-[18px] items-center justify-center"
+                      style={{ height: DOT }}
+                    >
+                      <span
+                        className="block w-[5px] rounded-full transition-all duration-300"
+                        style={{
+                          height: on ? 14 : 5,
+                          background: on ? 'var(--c-accent)' : 'var(--c-text)',
+                          opacity: on ? 1 : 0.22,
+                        }}
+                      />
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+            {/* 현재 섹션 이름 — 점 옆에 겹쳐서 표시(목록 폭에 영향 없음), 바뀔 때는 같은 자리에서 교차 페이드 */}
+            <div
+              className="pointer-events-none absolute"
+              style={{
+                top: PAD + activeIndex * DOT + DOT / 2,
+                [right ? 'right' : 'left']: 'calc(100% + 6px)',
+                transition: 'top .3s ease',
+              }}
+            >
+              <AnimatePresence initial={false}>
+                {(content.nav.showLabels || showLabel) && activeSection && (
+                  <motion.span
+                    key={activeSection.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="font-serif-en absolute top-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[0.64rem] tracking-[0.18em]"
+                    style={{
+                      [right ? 'right' : 'left']: 0,
+                      translateY: '-50%',
+                      background: 'color-mix(in srgb, var(--c-bg) 70%, transparent)',
+                      color: 'var(--c-text)',
+                    }}
+                  >
+                    {activeSection.label.toUpperCase()}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.nav>
+        </div>
       )}
     </AnimatePresence>
   )
