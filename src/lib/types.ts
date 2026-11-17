@@ -201,6 +201,9 @@ export interface ThankYouSettings {
   showNames: boolean
   showDate: boolean
   effect: 'petals' | 'light' | 'none'
+  bgPhoto: ImageRef | null // 배경 사진
+  bgBlur: number // px
+  bgOpacity: number // 0~1 (사진이 보이는 정도)
 }
 
 export interface GreetingSettings {

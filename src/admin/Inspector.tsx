@@ -614,6 +614,7 @@ function PhotographerEditor({ id }: { id: string }) {
 function ThankYouEditor({ id }: { id: string }) {
   const { s, set } = useSection<'thankyou'>(id)
   return (
+    <>
     <Group title="마지막 인사">
       <TextInput label="필기체 문구" value={s.script} onChange={(v) => set((x) => void (x.script = v))} />
       <TextArea label="감사 메시지" value={s.message} rows={4} onChange={(v) => set((x) => void (x.message = v))} />
@@ -630,6 +631,17 @@ function ThankYouEditor({ id }: { id: string }) {
         ]}
       />
     </Group>
+    <Group title="배경 사진">
+      <ImageField label="배경 사진 (선택)" value={s.bgPhoto} aspect="9:16" onChange={(v) => set((x) => void (x.bgPhoto = v))} />
+      {s.bgPhoto && (
+        <>
+          <Slider label="흐림" min={0} max={40} value={s.bgBlur} onChange={(v) => set((x) => void (x.bgBlur = v))} format={(n) => (n === 0 ? '선명하게' : `${n}px`)} />
+          <Slider label="사진 진하기" min={0.1} max={1} step={0.05} value={s.bgOpacity} onChange={(v) => set((x) => void (x.bgOpacity = v))} format={(n) => `${Math.round(n * 100)}%`} />
+          <p className="text-[11px] text-stone-400">글씨가 잘 안 보이면 흐림을 높이거나 진하기를 낮춰 보세요.</p>
+        </>
+      )}
+    </Group>
+    </>
   )
 }
 

@@ -202,6 +202,9 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       showNames: true,
       showDate: true,
       effect: 'petals',
+      bgPhoto: null,
+      bgBlur: 8,
+      bgOpacity: 0.45,
     }),
     greeting: () => ({
       eyebrow: 'INVITATION',

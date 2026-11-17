@@ -6,6 +6,7 @@ import { Reveal } from '../ui/Reveal'
 import { Body, SectionShell } from '../SectionShell'
 import { inviteUrl, shareKakao, shareNative } from '../../lib/share'
 import { copyText } from '../../lib/util'
+import { imageSrc } from '../../lib/image'
 
 function ShareBar() {
   const { content, flags, toast } = useInvite()
@@ -90,8 +91,27 @@ export function ThankYouSection({ section, selected }: { section: SectionOf<'tha
   const { content, motionOn } = useInvite()
   const s = section.settings
   const p = parseWedding(content.wedding)
+  const src = imageSrc(s.bgPhoto)
+  // 배경 사진: 흐림·진하기 조절, 위아래는 바탕색으로 자연스럽게
+  const backdrop = src ? (
+    <>
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{
+          objectPosition: `${s.bgPhoto?.focusX ?? 50}% ${s.bgPhoto?.focusY ?? 50}%`,
+          filter: s.bgBlur ? `blur(${s.bgBlur}px)` : undefined,
+          transform: `scale(${1 + Math.min(0.25, s.bgBlur / 80)})`,
+          opacity: s.bgOpacity,
+        }}
+      />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, var(--c-bg) 0%, transparent 18%, transparent 82%, var(--c-bg) 100%)' }} />
+    </>
+  ) : undefined
   return (
-    <SectionShell section={section} selected={selected} className="overflow-hidden">
+    <SectionShell section={section} selected={selected} className="overflow-hidden" backdrop={backdrop}>
       {motionOn && s.effect !== 'none' && <Petals kind={s.effect} />}
       <div className="relative">
         <Reveal variant="fade">
