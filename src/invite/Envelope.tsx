@@ -262,6 +262,8 @@ export function Envelope({ section, onOpened, onReveal, pageY }: Props) {
           vh={vp.h}
           cx={vp.w / 2}
           cy={vp.h / 2 + sealOffset}
+          top={vp.h / 2 - (vp.eh * sy) / 2}
+          bottom={vp.h / 2 + (vp.eh * sy) / 2}
           envWidth={vp.ew * sx}
           center={s.ribbonCenter === 'seal' ? (
             <g transform="translate(-30 -30)">

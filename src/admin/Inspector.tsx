@@ -167,10 +167,10 @@ function EnvelopeEditor({ id }: { id: string }) {
         {s.closure !== 'seal' && (
           <>
             <ColorInput
-              label="리본 색상 (오간자처럼 비쳐 보여요)"
+              label="리본 색상"
               value={s.ribbonColor}
               onChange={(v) => set((x) => void (x.ribbonColor = v))}
-              presets={['#FFFFFF', '#F1E9DC', '#D9C3A0', '#E2B9B5', '#B9C6AE', '#B7C9DC', '#7E8EA8', '#A86B69']}
+              presets={['#FFFFFF', '#EFE6D6', '#D2B98F', '#D6ABA7', '#A86B69', '#9DAA92', '#8A9BB5', '#2F3B5C', '#3B3836']}
             />
             <Toggle
               label="매듭 가운데 실링왁스 달기"

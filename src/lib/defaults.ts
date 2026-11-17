@@ -88,7 +88,7 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       showOnEveryVisit: true,
       startView: 'closeup',
       closure: 'ribbon',
-      ribbonColor: '#FFFFFF',
+      ribbonColor: '#D6ABA7',
       ribbonCenter: 'none',
     }),
     main: () => ({
