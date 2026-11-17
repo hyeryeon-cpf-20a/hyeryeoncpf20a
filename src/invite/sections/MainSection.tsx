@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import type { SectionOf } from '../../lib/types'
 import { formatEnDate, parseWedding } from '../../lib/date'
-import { aspectRatio } from '../../lib/image'
+import { aspectRatio, imageSrc } from '../../lib/image'
 import { useInvite } from '../context'
 import { Img } from '../ui/Img'
 import { Reveal } from '../ui/Reveal'
@@ -11,11 +11,39 @@ export function MainSection({ section, selected, ready }: { section: SectionOf<'
   const { content, motionOn, speed } = useInvite()
   const s = section.settings
   const date = parseWedding(content.wedding)
-  const ratio = aspectRatio(s.aspect, s.photo) ?? 0.75
   const anim = section.style.animation.enabled && motionOn
   const d = section.style.animation.duration / speed
+  const oval = s.photoShape !== 'rect'
+  const aspect = oval ? '3:5' : s.aspect
+  const ratio = aspectRatio(aspect, s.photo) ?? 0.75
+  const src = imageSrc(s.photo)
+  const fx = s.photo?.focusX ?? 50
+  const fy = s.photo?.focusY ?? 50
+  // 배경: 같은 사진을 흐리고 은은하게, 위아래는 바탕색으로 자연스럽게 녹아들도록
+  const backdrop =
+    s.bgPhoto && src ? (
+      <>
+        <motion.img
+          src={src}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{
+            objectPosition: `${fx}% ${fy}%`,
+            filter: `blur(${s.bgBlur}px) saturate(.9)`,
+            transform: `scale(${1 + Math.min(0.3, s.bgBlur / 80)})`,
+          }}
+          initial={anim ? { opacity: 0 } : { opacity: s.bgOpacity }}
+          animate={ready ? { opacity: s.bgOpacity } : undefined}
+          transition={{ duration: d * 1.8, ease: 'easeOut' }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(180deg, var(--c-bg) 0%, transparent 22%, transparent 74%, var(--c-bg) 100%)' }}
+        />
+      </>
+    ) : undefined
   return (
-    <SectionShell section={section} selected={selected}>
+    <SectionShell section={section} selected={selected} backdrop={backdrop}>
       <div className="flex flex-col items-center">
         <motion.h1
           className="font-script leading-[1.05]"
@@ -31,14 +59,22 @@ export function MainSection({ section, selected, ready }: { section: SectionOf<'
           className="mt-7 w-full"
           style={{
             // 화면 한 장에 들어오도록 사진 높이 제한 (비율 유지)
-            width: `min(100%, calc((100svh - 300px) * ${ratio.toFixed(4)}))`,
-            minWidth: '62%',
+            width: oval ? `min(76%, calc((100svh - 300px) * ${ratio.toFixed(4)}))` : `min(100%, calc((100svh - 300px) * ${ratio.toFixed(4)}))`,
+            minWidth: oval ? '52%' : '62%',
           }}
           initial={anim ? { opacity: 0 } : false}
           animate={ready ? { opacity: 1 } : undefined}
           transition={{ duration: d * 1.6, delay: 0.55 / speed, ease: 'easeOut' }}
         >
-          <Img image={s.photo} aspect={s.aspect} radius={s.photoRadius >= 200 ? '999px 999px 0 0' : s.photoRadius} zoomIn eager alt="신랑 신부 메인 사진" />
+          <Img
+            image={s.photo}
+            aspect={aspect}
+            radius={oval ? '50%' : s.photoRadius >= 200 ? '999px 999px 0 0' : s.photoRadius}
+            zoomIn
+            eager
+            alt="신랑 신부 메인 사진"
+            style={oval ? { boxShadow: '0 20px 50px -24px rgba(81,74,67,.45)' } : undefined}
+          />
         </motion.div>
 
         <Reveal className="mt-8" delay={0.9}>

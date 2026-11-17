@@ -87,9 +87,6 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       cardText: 'You are invited',
       showOnEveryVisit: true,
       startView: 'closeup',
-      closure: 'ribbon',
-      ribbonColor: '#D6ABA7',
-      ribbonCenter: 'none',
     }),
     main: () => ({
       namesEn: 'hyeryeon & sunghwan',
@@ -98,6 +95,10 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       photo: sampleImage(1),
       aspect: '3:4',
       photoRadius: 0,
+      photoShape: 'oval',
+      bgPhoto: true,
+      bgOpacity: 0.35,
+      bgBlur: 16,
       namesSize: 2.6,
     }),
     story: () => ({

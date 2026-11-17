@@ -13,7 +13,7 @@ export type SectionType =
   | 'thankyou'
   | 'text'
 
-export type Aspect = 'original' | '1:1' | '4:5' | '3:4' | '2:3' | '9:16' | '4:3' | '3:2' | '16:9'
+export type Aspect = 'original' | '1:1' | '4:5' | '3:4' | '2:3' | '3:5' | '9:16' | '4:3' | '3:2' | '16:9'
 
 /** 이미지 참조. path 는 media 버킷 경로, url 은 외부 이미지. crop 은 비파괴 크롭(초점·확대). */
 export interface ImageRef {
@@ -62,9 +62,6 @@ export interface EnvelopeSettings {
   hint: string
   cardText: string
   showOnEveryVisit: boolean
-  closure: 'ribbon' | 'seal' // 봉투를 여는 장식
-  ribbonColor: string
-  ribbonCenter: 'none' | 'seal' // 리본 매듭 가운데 실링왁스
   startView: 'closeup' | 'full' // 시작 화면: 실링 클로즈업 / 봉투 전체
 }
 
@@ -75,6 +72,10 @@ export interface MainSettings {
   photo: ImageRef | null
   aspect: Aspect
   photoRadius: number
+  photoShape: 'oval' | 'rect' // 긴 타원형 / 사각형
+  bgPhoto: boolean // 배경에 같은 사진을 은은하게
+  bgOpacity: number // 0~1
+  bgBlur: number // px
   namesSize: number // rem
 }
 

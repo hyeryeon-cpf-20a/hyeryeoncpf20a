@@ -13,6 +13,7 @@ export function SectionShell({
   innerClassName = '',
   center = true,
   selected,
+  backdrop,
 }: {
   section: Section
   children: ReactNode
@@ -20,6 +21,8 @@ export function SectionShell({
   innerClassName?: string
   center?: boolean
   selected?: boolean
+  /** 섹션 전체를 덮는 배경 레이어 (예: 흐린 사진) */
+  backdrop?: ReactNode
 }) {
   const st = section.style
   const bg =
@@ -46,8 +49,13 @@ export function SectionShell({
       className={`sec ${st.fitScreen ? 'sec-fit' : ''} ${center && st.fitScreen ? 'flex flex-col justify-center' : ''} ${className}`}
       style={style}
     >
+      {backdrop && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          {backdrop}
+        </div>
+      )}
       <SectionAnim.Provider value={st.animation}>
-        <div className={`sec-inner ${innerClassName}`}>{children}</div>
+        <div className={`sec-inner ${backdrop ? 'relative' : ''} ${innerClassName}`}>{children}</div>
       </SectionAnim.Provider>
     </section>
   )

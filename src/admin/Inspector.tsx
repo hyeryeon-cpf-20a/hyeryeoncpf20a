@@ -155,32 +155,6 @@ function EnvelopeEditor({ id }: { id: string }) {
         />
         <TextInput label="안내 문구" value={s.hint} onChange={(v) => set((x) => void (x.hint = v))} />
       </Group>
-      <Group title="봉투를 여는 장식">
-        <Segmented
-          value={s.closure === 'seal' ? 'seal' : 'ribbon'}
-          onChange={(v) => set((x) => void (x.closure = v))}
-          options={[
-            { value: 'ribbon', label: '리본 풀기' },
-            { value: 'seal', label: '실링왁스' },
-          ]}
-        />
-        {s.closure !== 'seal' && (
-          <>
-            <ColorInput
-              label="리본 색상"
-              value={s.ribbonColor}
-              onChange={(v) => set((x) => void (x.ribbonColor = v))}
-              presets={['#FFFFFF', '#EFE6D6', '#D2B98F', '#D6ABA7', '#A86B69', '#9DAA92', '#8A9BB5', '#2F3B5C', '#3B3836']}
-            />
-            <Toggle
-              label="매듭 가운데 실링왁스 달기"
-              checked={s.ribbonCenter === 'seal'}
-              onChange={(v) => set((x) => void (x.ribbonCenter = v ? 'seal' : 'none'))}
-            />
-          </>
-        )}
-      </Group>
-      {(s.closure === 'seal' || s.ribbonCenter === 'seal') && (
       <Group title="실링왁스">
         <ColorInput label="왁스 색상" value={s.waxColor} onChange={(v) => set((x) => void (x.waxColor = v))} presets={[PALETTE.wax, '#8E5A57', '#B8A489', '#8C9A80', '#6F6259', '#C9A0A0']} />
         <Segmented
@@ -197,7 +171,6 @@ function EnvelopeEditor({ id }: { id: string }) {
           <TextInput label="실링에 넣을 글자" value={s.waxInitials} onChange={(v) => set((x) => void (x.waxInitials = v))} maxLength={7} hint="예: C & J · 최대 7자" />
         )}
       </Group>
-      )}
       <Group title="애니메이션">
         <Slider label="열리는 속도" min={0.5} max={2} step={0.1} value={s.speed} onChange={(v) => set((x) => void (x.speed = v))} format={(n) => (n < 1 ? `느리게 ×${n}` : n > 1 ? `빠르게 ×${n}` : '기본')} />
         <Toggle
@@ -222,9 +195,33 @@ function MainEditor({ id }: { id: string }) {
         <TextInput label="하단 문구" value={s.fromText} onChange={(v) => set((x) => void (x.fromText = v))} />
       </Group>
       <Group title="메인 사진">
-        <ImageField label="사진" value={s.photo} aspect={s.aspect} onChange={(v) => set((x) => void (x.photo = v))} onAspectChange={(a) => set((x) => void (x.aspect = a))} />
-        <Select label="사진 비율" value={s.aspect} onChange={(v) => set((x) => void (x.aspect = v))} options={ASPECTS} />
-        <Slider label="모서리 둥글기" min={0} max={200} value={s.photoRadius} onChange={(v) => set((x) => void (x.photoRadius = v))} format={(n) => (n >= 200 ? '아치' : `${n}px`)} />
+        <Segmented
+          label="사진 모양"
+          value={s.photoShape === 'rect' ? 'rect' : 'oval'}
+          onChange={(v) => set((x) => void (x.photoShape = v))}
+          options={[
+            { value: 'oval', label: '긴 타원형' },
+            { value: 'rect', label: '사각형' },
+          ]}
+        />
+        {s.photoShape === 'rect' ? (
+          <>
+            <ImageField label="사진" value={s.photo} aspect={s.aspect} onChange={(v) => set((x) => void (x.photo = v))} onAspectChange={(a) => set((x) => void (x.aspect = a))} />
+            <Select label="사진 비율" value={s.aspect} onChange={(v) => set((x) => void (x.aspect = v))} options={ASPECTS} />
+            <Slider label="모서리 둥글기" min={0} max={200} value={s.photoRadius} onChange={(v) => set((x) => void (x.photoRadius = v))} format={(n) => (n >= 200 ? '아치' : `${n}px`)} />
+          </>
+        ) : (
+          <ImageField label="사진" value={s.photo} aspect="3:5" onChange={(v) => set((x) => void (x.photo = v))} />
+        )}
+      </Group>
+      <Group title="배경 사진">
+        <Toggle label="같은 사진을 배경에 은은하게 깔기" checked={s.bgPhoto} onChange={(v) => set((x) => void (x.bgPhoto = v))} />
+        {s.bgPhoto && (
+          <>
+            <Slider label="진하기" min={0.1} max={0.9} step={0.05} value={s.bgOpacity} onChange={(v) => set((x) => void (x.bgOpacity = v))} format={(n) => `${Math.round(n * 100)}%`} />
+            <Slider label="흐림" min={0} max={40} value={s.bgBlur} onChange={(v) => set((x) => void (x.bgBlur = v))} format={(n) => (n === 0 ? '선명하게' : `${n}px`)} />
+          </>
+        )}
       </Group>
     </>
   )
