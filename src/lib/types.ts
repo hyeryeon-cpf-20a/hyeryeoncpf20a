@@ -301,6 +301,9 @@ export interface InvitationContent {
     image: ImageRef | null
     kakaoJsKey: string
     buttonText: string
+    /** 게시할 때 만든 링크 미리보기용 가로 사진(1200×630, 정한 위치대로 잘림) */
+    ogImagePath?: string
+    ogKey?: string
   }
   maps: {
     kakaoJsKey: string

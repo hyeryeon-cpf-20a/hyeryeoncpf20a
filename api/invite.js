@@ -44,7 +44,9 @@ export default async function handler(req, res) {
       const c = data?.content
       if (c?.share) {
         const main = (c.sections || []).find((s) => s.type === 'main')
-        const img = imageUrl(c.share.image || main?.settings?.photo, url, origin)
+        const img = c.share.ogImagePath
+          ? imageUrl({ path: c.share.ogImagePath }, url, origin)
+          : imageUrl(c.share.image || main?.settings?.photo, url, origin)
         const title = esc(c.share.title)
         const desc = esc(String(c.share.description || '').replace(/\n/g, ' '))
         const pageUrl = req.query.slug ? `${origin}/invite/${slug}` : `${origin}/`
@@ -56,6 +58,7 @@ export default async function handler(req, res) {
           `<meta property="og:title" content="${title}" />`,
           `<meta property="og:description" content="${desc}" />`,
           img ? `<meta property="og:image" content="${esc(img)}" />` : '',
+          img && c.share.ogImagePath ? `<meta property="og:image:width" content="1200" />\n    <meta property="og:image:height" content="630" />` : '',
           `<meta name="twitter:card" content="summary_large_image" />`,
         ].join('\n    ')
         html = html.replace(/<!--og:start-->[\s\S]*?<!--og:end-->/, tags)

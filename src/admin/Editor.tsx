@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { publish, saveDraft, updateFlags, type AdminFlags, type AdminInvitation, type MediaAsset } from '../lib/api'
 import type { InvitationContent, RuntimeFlags } from '../lib/types'
 import { errorMessage } from '../lib/util'
-import { inviteUrl } from '../lib/share'
+import { inviteUrl, renderOgImage, shareImageRef } from '../lib/share'
+import { requireClient } from '../lib/supabase'
 import { EditorContext, type EditorCtx } from './EditorContext'
 import { SectionList, THEME_ID } from './SectionList'
 import { SectionInspector } from './Inspector'
@@ -176,6 +177,27 @@ export function Editor({
     setPublishing(true)
     try {
       if (saveTimer.current) clearTimeout(saveTimer.current)
+      // 링크 미리보기용 사진을 정한 위치대로 잘라 두기 (사진이나 위치가 바뀐 경우에만)
+      try {
+        const src = shareImageRef(latest.current)
+        const key = src ? JSON.stringify([src.path, src.url, src.focusX, src.focusY, src.zoom]) : ''
+        if (key && key !== latest.current.share.ogKey) {
+          const blob = await renderOgImage(src!)
+          if (blob) {
+            const path = `${inv.data_id}/og-${inv.id.slice(0, 8)}-${Date.now()}.jpg`
+            const up = await requireClient().storage.from('media').upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000' })
+            if (!up.error) {
+              const next = clone(latest.current)
+              next.share.ogImagePath = path
+              next.share.ogKey = key
+              latest.current = next
+              setDraft(next)
+            }
+          }
+        }
+      } catch {
+        /* 미리보기 사진을 못 만들어도 게시는 계속 */
+      }
       await doSave()
       const r = await publish(inv.id)
       setInv((p) => ({ ...p, published: clone(latest.current), is_published: true, published_at: r.published_at }))

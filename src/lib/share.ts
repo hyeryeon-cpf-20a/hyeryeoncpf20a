@@ -28,7 +28,7 @@ export async function shareKakao(content: InvitationContent, url: string): Promi
   await loadKakao()
   if (!window.Kakao) return false
   if (!window.Kakao.isInitialized()) window.Kakao.init(key)
-  const img = imageSrc(shareImageRef(content))
+  const img = content.share.ogImagePath ? imageSrc({ path: content.share.ogImagePath }) : imageSrc(shareImageRef(content))
   const abs = img ? new URL(img, window.location.origin).toString() : undefined
   window.Kakao.Share.sendDefault({
     objectType: 'feed',
@@ -62,4 +62,44 @@ export function shareImageRef(content: InvitationContent) {
   if (content.share.image) return content.share.image
   const main = content.sections.find((s) => s.type === 'main')
   return main?.type === 'main' ? main.settings.photo : null
+}
+
+/**
+ * 링크 미리보기용 가로 사진(1200×630)을 관리자가 정한 위치·확대 그대로 잘라 만듭니다.
+ * 카카오톡이 원본을 제멋대로 자르지 않도록, 이미 잘린 사진을 넘겨 줍니다.
+ */
+export async function renderOgImage(img: import('./types').ImageRef): Promise<Blob | null> {
+  const src = imageSrc(img)
+  if (!src) return null
+  const el = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image()
+    i.crossOrigin = 'anonymous'
+    i.onload = () => resolve(i)
+    i.onerror = reject
+    i.src = src
+  })
+  const W = 1200
+  const H = 630
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  const fx = (img.focusX ?? 50) / 100
+  const fy = (img.focusY ?? 50) / 100
+  const z = img.zoom ?? 1
+  // 화면에서와 똑같이: 꽉 채우기(cover) + 초점 위치 + 초점 기준 확대
+  const s0 = Math.max(W / el.naturalWidth, H / el.naturalHeight)
+  let dw = el.naturalWidth * s0
+  let dh = el.naturalHeight * s0
+  let dx = -(dw - W) * fx
+  let dy = -(dh - H) * fy
+  const px = W * fx
+  const py = H * fy
+  dx = px - (px - dx) * z
+  dy = py - (py - dy) * z
+  dw *= z
+  dh *= z
+  ctx.drawImage(el, dx, dy, dw, dh)
+  return new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.88))
 }
