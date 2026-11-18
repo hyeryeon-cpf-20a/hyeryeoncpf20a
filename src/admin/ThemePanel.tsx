@@ -29,16 +29,16 @@ const DESIGN_THEMES = [
     desc: '아이보리 · 샴페인 골드 · 실링왁스',
     swatch: ['#FAF9F6', '#B8A489', '#A86B69'],
     colors: PALETTE,
-    envelope: { envelopeColor: '#F7F3EC', liningColor: '#EFE8DC', texture: 'cotton' as const, outlineColor: '', closure: 'seal' as const },
+    envelope: { envelopeColor: '#F7F3EC', liningColor: '#EFE8DC', texture: 'cotton' as const, outlineColor: '', closure: 'seal' as const, waxColor: PALETTE.wax },
     highlight: PALETTE.wax,
   },
   {
     id: 'ribboncore',
     name: '리본코어',
-    desc: '블랙 · 화이트 · 핑크 리본',
-    swatch: ['#FFFFFF', '#1A1A1A', '#F2A2BC'],
+    desc: '블랙 · 화이트 · 핑크 실링왁스',
+    swatch: ['#FFFFFF', '#1A1A1A', '#E58AA8'],
     colors: { bg: '#FFFFFF', bg2: '#FFF6F9', text: '#1A1A1A', accent: '#E58AA8', sage: '#F6D3DF', wax: '#EC8FAE', muted: '#8C8C8C' },
-    envelope: { envelopeColor: '#FFFFFF', liningColor: '#FCE6EE', texture: 'smooth' as const, outlineColor: '#1A1A1A', closure: 'bow' as const, bowColor: '#F2A2BC' },
+    envelope: { envelopeColor: '#FFFFFF', liningColor: '#FCE6EE', texture: 'smooth' as const, outlineColor: '#1A1A1A', closure: 'seal' as const, waxColor: '#E58AA8' },
     highlight: '#EC8FAE',
   },
 ]
@@ -84,7 +84,7 @@ export function ThemePanel() {
             )
           })}
         </div>
-        <p className="text-[11px] text-stone-400">색상, 봉투, 실링왁스/리본, 달력 강조색이 한 번에 바뀌어요. 아래에서 하나씩 더 바꿀 수 있어요.</p>
+        <p className="text-[11px] text-stone-400">색상, 봉투, 실링왁스 색, 달력 강조색이 한 번에 바뀌어요. 아래에서 하나씩 더 바꿀 수 있어요.</p>
       </Group>
 
       <Group title="결혼식 일시">
