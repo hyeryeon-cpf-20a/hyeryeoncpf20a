@@ -21,6 +21,28 @@ const PRESETS: { name: string; colors: typeof PALETTE }[] = [
   { name: 'Linen Grey', colors: { bg: '#F8F7F4', bg2: '#EFEDE8', text: '#4A4744', accent: '#A89F92', sage: '#B9BFB5', wax: '#8C7A70', muted: '#98938C' } },
 ]
 
+/** 디자인 테마: 색·봉투·장식을 한 번에 바꾸는 묶음 */
+const DESIGN_THEMES = [
+  {
+    id: 'ivory',
+    name: 'Warm Ivory',
+    desc: '아이보리 · 샴페인 골드 · 실링왁스',
+    swatch: ['#FAF9F6', '#B8A489', '#A86B69'],
+    colors: PALETTE,
+    envelope: { envelopeColor: '#F7F3EC', liningColor: '#EFE8DC', texture: 'cotton' as const, outlineColor: '', closure: 'seal' as const },
+    highlight: PALETTE.wax,
+  },
+  {
+    id: 'ribboncore',
+    name: '리본코어',
+    desc: '블랙 · 화이트 · 핑크 리본',
+    swatch: ['#FFFFFF', '#1A1A1A', '#F2A2BC'],
+    colors: { bg: '#FFFFFF', bg2: '#FFF6F9', text: '#1A1A1A', accent: '#E58AA8', sage: '#F6D3DF', wax: '#EC8FAE', muted: '#8C8C8C' },
+    envelope: { envelopeColor: '#FFFFFF', liningColor: '#FCE6EE', texture: 'smooth' as const, outlineColor: '#1A1A1A', closure: 'bow' as const, bowColor: '#F2A2BC' },
+    highlight: '#EC8FAE',
+  },
+]
+
 export function ThemePanel() {
   const { draft, update } = useEditor()
   const t = draft.theme
@@ -31,6 +53,39 @@ export function ThemePanel() {
         <p className="text-[11px] text-stone-400">모든 페이지에 적용</p>
         <p className="text-[15px] font-semibold text-stone-800">기본 정보 · 전체 디자인</p>
       </div>
+
+      <Group title="디자인 테마">
+        <div className="grid grid-cols-2 gap-2">
+          {DESIGN_THEMES.map((t) => {
+            const on = t.colors.bg.toUpperCase() === draft.theme.colors.bg.toUpperCase() && t.colors.text.toUpperCase() === draft.theme.colors.text.toUpperCase()
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() =>
+                  update((d) => {
+                    d.theme.colors = { ...t.colors }
+                    d.sections.forEach((sec) => {
+                      if (sec.type === 'envelope') Object.assign(sec.settings, t.envelope)
+                      if (sec.type === 'calendar') sec.settings.highlightColor = t.highlight
+                    })
+                  })
+                }
+                className={`rounded-xl border p-3 text-left transition ${on ? 'border-[#8a7a66] bg-[#F4F0E8]' : 'border-stone-200 hover:bg-stone-50'}`}
+              >
+                <span className="flex -space-x-1">
+                  {t.swatch.map((c) => (
+                    <span key={c} className="h-5 w-5 rounded-full border border-stone-300" style={{ background: c }} />
+                  ))}
+                </span>
+                <span className="mt-2 block text-[13px] font-semibold text-stone-800">{t.name}</span>
+                <span className="block text-[11px] text-stone-500">{t.desc}</span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-[11px] text-stone-400">색상, 봉투, 실링왁스/리본, 달력 강조색이 한 번에 바뀌어요. 아래에서 하나씩 더 바꿀 수 있어요.</p>
+      </Group>
 
       <Group title="결혼식 일시">
         <div className="grid grid-cols-2 gap-2">

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { animate, motion, useMotionValue, type MotionValue } from 'framer-motion'
 import type { SectionOf } from '../lib/types'
 import { WaxSeal } from './WaxSeal'
+import { RibbonBow } from './RibbonBow'
 import { MainSection } from './sections/MainSection'
 import { useInvite } from './context'
 
@@ -181,6 +182,12 @@ export function Envelope({ section, onOpened, onReveal, pageY, cardSection }: Pr
   const envRgb = [1, 3, 5].map((i) => parseInt((s.envelopeColor || '#F7F3EC').slice(i, i + 2), 16) || 0)
   const darkEnv = (0.299 * envRgb[0] + 0.587 * envRgb[1] + 0.114 * envRgb[2]) / 255 < 0.45
   const tex = darkEnv ? 'paper-dark' : `paper-${s.texture}`
+  const outline = s.outlineColor?.trim() || ''
+  const foldStroke = outline || 'rgba(81,74,67,.10)'
+  const flapStroke = outline || 'rgba(81,74,67,.12)'
+  const strokeW = outline ? 1 : 0.4
+  const bow = s.closure === 'bow'
+  const accent = bow ? s.bowColor : s.waxColor
   const tri = `polygon(0 0, 100% 0, 50% 100%)`
   return (
     <motion.div
@@ -289,7 +296,9 @@ export function Envelope({ section, onOpened, onReveal, pageY, cardSection }: Pr
                   }}
                 />
                 <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
-                  <path d={`M0 100 L50 ${FLAP * 100 - 3} L100 100`} fill="none" stroke="rgba(81,74,67,.10)" strokeWidth=".35" vectorEffect="non-scaling-stroke" />
+                  <path d={`M0 100 L50 ${FLAP * 100 - 3} L100 100`} fill="none" stroke={foldStroke} strokeWidth={outline ? 0.8 : 0.35} vectorEffect="non-scaling-stroke" />
+                  {/* 봉투 바깥 테두리 */}
+                  {outline && <rect x="0" y="0" width="100" height="100" fill="none" stroke={outline} strokeWidth={strokeW} vectorEffect="non-scaling-stroke" />}
                 </svg>
               </div>
 
@@ -326,7 +335,8 @@ export function Envelope({ section, onOpened, onReveal, pageY, cardSection }: Pr
                   aria-hidden
                   style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
                 >
-                  <path d="M0 0 L50 100 L100 0" fill="none" stroke="rgba(81,74,67,.12)" strokeWidth=".4" vectorEffect="non-scaling-stroke" />
+                  <path d="M0 0 L50 100 L100 0" fill="none" stroke={flapStroke} strokeWidth={strokeW} vectorEffect="non-scaling-stroke" />
+                  {outline && <path d="M0 0 L100 0" fill="none" stroke={outline} strokeWidth={strokeW} vectorEffect="non-scaling-stroke" />}
                 </svg>
               </div>
             </motion.div>
@@ -344,7 +354,7 @@ export function Envelope({ section, onOpened, onReveal, pageY, cardSection }: Pr
           ref={ripple}
           aria-hidden
           className="pointer-events-none absolute inset-0 m-auto rounded-full"
-          style={{ width: sealSize, height: sealSize, border: `2px solid ${s.waxColor}`, opacity: 0 }}
+          style={{ width: sealSize, height: sealSize, border: `2px solid ${accent}`, opacity: 0 }}
         />
         <button
           ref={seal}
@@ -362,7 +372,14 @@ export function Envelope({ section, onOpened, onReveal, pageY, cardSection }: Pr
             animate={phase === 'idle' && motionOn ? { scale: [1, 1.035, 1] } : { scale: 1 }}
             transition={phase === 'idle' ? { duration: 2.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.15 }}
           >
-            <WaxSeal settings={s} size={sealSize} />
+            {bow ? (
+              // 리본의 매듭이 덮개 끝(실링왁스 자리)에 오도록 살짝 아래로
+              <span className="block" style={{ marginTop: sealSize * 0.56, marginBottom: -sealSize * 0.56 }}>
+                <RibbonBow color={s.bowColor} size={sealSize * 1.45} />
+              </span>
+            ) : (
+              <WaxSeal settings={s} size={sealSize} />
+            )}
           </motion.span>
         </button>
       </div>

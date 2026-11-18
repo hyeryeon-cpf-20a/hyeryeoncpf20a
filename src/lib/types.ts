@@ -63,6 +63,9 @@ export interface EnvelopeSettings {
   hint: string
   cardText: string
   showOnEveryVisit: boolean
+  closure: 'seal' | 'bow' // 실링왁스 / 핑크 리본
+  bowColor: string
+  outlineColor: string // 봉투 테두리 선 색 (비우면 선 없음)
   startView: 'closeup' | 'full' // 시작 화면: 실링 클로즈업 / 봉투 전체
 }
 

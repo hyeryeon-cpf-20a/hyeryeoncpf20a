@@ -88,6 +88,9 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       cardText: 'You are invited',
       showOnEveryVisit: true,
       startView: 'closeup',
+      closure: 'seal',
+      bowColor: '#F2A2BC',
+      outlineColor: '',
     }),
     main: () => ({
       namesEn: 'hyeryeon & sunghwan',
