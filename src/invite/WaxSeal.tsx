@@ -26,31 +26,30 @@ function blobPath(cx: number, cy: number, r: number, seed = 7) {
   return d + ' Z'
 }
 
-/** 가리비 조개: 아래 경첩에서 부채꼴로 퍼지는 골과 물결 모양 가장자리 */
+/** 가리비 조개: 둥근 몸통(아래 경첩에서 퍼지는 골 + 물결 가장자리)과 경첩 양옆의 작은 귀 */
 function shellPaths() {
   const hx = 50
-  const hy = 69
-  const R = 31
-  const n = 10
-  const a0 = (-64 * Math.PI) / 180
-  const a1 = (64 * Math.PI) / 180
+  const hy = 66
+  const Rc = 17.5 // 몸통은 경첩을 아래 끝점으로 하는 원에 가깝게
+  const n = 13
+  const lim = (80 * Math.PI) / 180
+  const len = (a: number) => 2 * Rc * Math.cos(a) * (1 - 0.04 * Math.cos(a))
   const at = (a: number, r: number) => [hx + Math.sin(a) * r, hy - Math.cos(a) * r] as const
   const f = (p: readonly [number, number]) => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`
-  const bounds = Array.from({ length: n + 1 }, (_, i) => a0 + ((a1 - a0) * i) / n)
-  // 가장자리 반지름: 가운데가 가장 높고 양옆으로 갈수록 살짝 낮게
-  const rAt = (a: number) => R * (1 - 0.1 * Math.pow(a / a1, 2))
-  let outline = `M ${f(at(a0, 5))} L ${f(at(a0, rAt(a0)))}`
+  const bounds = Array.from({ length: n + 1 }, (_, i) => -lim + ((2 * lim) * i) / n)
+  let outline = `M ${f(at(bounds[0], len(bounds[0])))}`
   const ridges: string[] = []
   for (let i = 0; i < n; i++) {
     const m = (bounds[i] + bounds[i + 1]) / 2
-    outline += ` Q ${f(at(m, rAt(m) * 1.13))} ${f(at(bounds[i + 1], rAt(bounds[i + 1])))}`
-    ridges.push(`M ${f(at(m, 9))} Q ${f(at(m * 0.97, rAt(m) * 0.6))} ${f(at(m, rAt(m) * 0.98))}`)
+    outline += ` Q ${f(at(m, len(m) + 2.6))} ${f(at(bounds[i + 1], len(bounds[i + 1])))}`
+    ridges.push(`M ${f(at(m, 5))} Q ${f(at(m * 0.96, len(m) * 0.55))} ${f(at(m, len(m) + 0.6))}`)
   }
-  outline += ` L ${f(at(a1, 5))} Z`
-  const grooves = bounds.slice(1, -1).map((a) => `M ${f(at(a, 6))} Q ${f(at(a * 0.95, rAt(a) * 0.55))} ${f(at(a, rAt(a)))}`)
+  outline += ` Q ${hx} ${hy + 2} ${f(at(bounds[0], len(bounds[0])))} Z`
+  const grooves = bounds.slice(1, -1).map((a) => `M ${f(at(a, 3))} Q ${f(at(a * 0.95, len(a) * 0.55))} ${f(at(a, len(a)))}`)
   // 경첩 양옆의 작은 귀
-  const ears = `M ${hx - 8.5} ${hy + 1.5} L ${hx - 4} ${hy - 3} L ${hx + 4} ${hy - 3} L ${hx + 8.5} ${hy + 1.5} Q ${hx + 7} ${hy + 4.6} ${hx + 3.5} ${hy + 4.2} L ${hx - 3.5} ${hy + 4.2} Q ${hx - 7} ${hy + 4.6} ${hx - 8.5} ${hy + 1.5} Z`
-  return { outline, grooves, ridges, ears }
+  const ears = `M ${hx - 12.5} ${hy - 1.5} L ${hx - 5} ${hy - 8} L ${hx + 5} ${hy - 8} L ${hx + 12.5} ${hy - 1.5} Q ${hx + 12} ${hy + 2.6} ${hx + 8} ${hy + 2.6} L ${hx - 8} ${hy + 2.6} Q ${hx - 12} ${hy + 2.6} ${hx - 12.5} ${hy - 1.5} Z`
+  const earLines = [-1, 1].flatMap((sg) => [0.35, 0.65].map((t) => `M ${hx + sg * 3} ${hy + 1.5} L ${hx + sg * (6 + 7 * t)} ${hy - 7 + 5.5 * t}`))
+  return { outline, grooves, ridges, ears, earLines }
 }
 
 function isLight(hex: string) {
@@ -114,7 +113,7 @@ export function WaxSeal({ settings, size = 76 }: { settings: Pick<EnvelopeSettin
       <circle cx="50" cy="50" r={faceR - 1.5} fill="none" stroke="#fff" strokeOpacity={pearly ? 0.5 : 0.18} strokeWidth=".8" />
       {emblem !== 'shell' && <circle cx="50" cy="50" r="27" fill="none" stroke="#000" strokeOpacity=".12" strokeWidth=".6" strokeDasharray="1.2 2.2" />}
       {emblem === 'shell' && (
-        <g transform="translate(50 50) rotate(-14) scale(1.22) translate(-50 -47)" strokeLinecap="round" strokeLinejoin="round">
+        <g transform="translate(50 50) rotate(-12) scale(1.3) translate(-50 -48.5)" strokeLinecap="round" strokeLinejoin="round">
           {/* 그림자 (오른쪽 아래) */}
           <g transform="translate(.9 1.1)" fill="#000" fillOpacity={pearly ? 0.14 : 0.22} filter={`url(#b${id})`}>
             <path d={shell.outline} />
@@ -123,6 +122,12 @@ export function WaxSeal({ settings, size = 76 }: { settings: Pick<EnvelopeSettin
           {/* 볼록 솟은 조개 */}
           <path d={shell.ears} fill={color} />
           <path d={shell.ears} fill={`url(#h${id})`} />
+          <path d={shell.ears} fill="none" stroke="#000" strokeOpacity={pearly ? 0.14 : 0.22} strokeWidth=".8" />
+          <g stroke="#000" strokeOpacity=".14" strokeWidth=".6">
+            {shell.earLines.map((d) => (
+              <path key={d} d={d} />
+            ))}
+          </g>
           <path d={shell.outline} fill={color} />
           <path d={shell.outline} fill={`url(#h${id})`} />
           {pearly && <path d={shell.outline} fill={`url(#p${id})`} opacity=".6" />}
@@ -146,8 +151,6 @@ export function WaxSeal({ settings, size = 76 }: { settings: Pick<EnvelopeSettin
           {/* 가장자리 테두리 */}
           <path d={shell.outline} fill="none" stroke="#000" strokeOpacity={pearly ? 0.14 : 0.22} strokeWidth=".9" />
           <path d={shell.outline} fill="none" stroke="#fff" strokeOpacity={pearly ? 0.8 : 0.3} strokeWidth=".7" transform="translate(-.5 -.6)" />
-          <path d={shell.ears} fill="none" stroke="#000" strokeOpacity={pearly ? 0.14 : 0.22} strokeWidth=".8" />
-          <path d={`M ${50 - 5.5} ${69 - 3.5} L ${50 + 5.5} ${69 - 3.5}`} stroke="#000" strokeOpacity=".14" strokeWidth=".8" />
         </g>
       )}
       <g fill="none" stroke="#000" strokeOpacity=".22" strokeLinecap="round" strokeLinejoin="round">
