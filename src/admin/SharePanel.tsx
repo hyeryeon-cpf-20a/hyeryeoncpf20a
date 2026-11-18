@@ -10,13 +10,6 @@ import { useEditor } from './EditorContext'
 import { ImageField } from './MediaLibrary'
 import { Btn, Group, TextArea, TextInput } from './ui'
 
-function mixHex(a: string, b: string, t: number) {
-  if (!/^#[0-9a-f]{6}$/i.test(a)) return ''
-  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16))
-  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16))
-  return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, '0')).join('')
-}
-
 export function SharePanel({ published, isPublished }: { published: InvitationContent | null; isPublished: boolean }) {
   const { draft, update, slug, toast } = useEditor()
   const url = inviteUrl(slug)
@@ -25,10 +18,9 @@ export function SharePanel({ published, isPublished }: { published: InvitationCo
   const [qrShape, setQrShape] = useState<'heart' | 'square'>('heart')
 
   useEffect(() => {
-    const soft = `color-mix(in srgb, ${qrDark} 22%, white)`
     const make =
       qrShape === 'heart'
-        ? heartQrDataUrl(url, { dark: qrDark, soft: mixHex(qrDark, '#ffffff', 0.78) || soft })
+        ? heartQrDataUrl(url, { dark: qrDark })
         : QRCode.toDataURL(url, { width: 1024, margin: 2, color: { dark: qrDark, light: '#FFFFFFFF' }, errorCorrectionLevel: 'M' })
     make.then(setQr).catch(() => setQr(''))
   }, [url, qrDark, qrShape])

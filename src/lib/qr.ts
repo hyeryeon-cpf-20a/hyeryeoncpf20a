@@ -1,56 +1,32 @@
 import QRCode from 'qrcode'
 
 /**
- * 통통한 하트 (좌표: x −1.3~1.3, y −1.3~1.3, 아래가 +y).
- * 위쪽 두 원 + 아래로 모이는 몸통 — 가운데에 큰 정사각형(QR)이 들어갈 수 있는 모양.
- */
-function inHeart(x: number, y: number) {
-  const R = 0.66
-  const cy = -0.42
-  const cx = 0.6
-  if ((x - cx) ** 2 + (y - cy) ** 2 <= R * R) return true
-  if ((x + cx) ** 2 + (y - cy) ** 2 <= R * R) return true
-  // 몸통: 원의 바깥쪽 끝에서 아래 꼭짓점(0, 1.22)까지 부드럽게 좁아짐
-  const tip = 1.27
-  if (y < cy || y > tip) return false
-  const t = (y - cy) / (tip - cy) // 0(위) → 1(꼭짓점)
-  const half = (cx + R) * Math.cos((t * Math.PI) / 2) ** 0.62
-  return Math.abs(x) <= half
-}
-
-/**
  * 하트 모양 QR 코드.
- * 실제 QR 코드는 가운데에 그대로(인식되도록) 두고, 하트 나머지는 연한 색 점무늬로 채웁니다.
+ * QR 코드를 45° 돌려 마름모(◆)로 하트의 몸통을 만들고, 위쪽 두 변에 반원 두 개를 붙여 하트를 완성합니다.
+ * 반원 부분은 QR 과 같은 모양·색의 점으로 채워 하트 전체가 QR 처럼 보이게 합니다.
+ * (인식에 필요한 모서리 위치 표시 주변만 한 칸 비워 둡니다)
  */
-export async function heartQrDataUrl(text: string, opts: { dark: string; soft: string; size?: number }): Promise<string> {
+export async function heartQrDataUrl(text: string, opts: { dark: string; size?: number }): Promise<string> {
   const qr = QRCode.create(text, { errorCorrectionLevel: 'H' })
   const m = qr.modules.size
   const data = qr.modules.data
-  const quiet = 2 // QR 주변 빈 칸
-  // QR(+여백)이 하트 안에 들어가는 가장 작은 격자를 찾아 QR 을 최대한 크게
-  const fitsAt = (g: number, offY: number) => {
-    const off = Math.round((g - m) / 2)
-    for (let r = -quiet; r < m + quiet; r++)
-      for (let c = -quiet; c < m + quiet; c++) {
-        const x = ((off + c + 0.5) / g) * 2.6 - 1.3
-        const y = ((offY + r + 0.5) / g) * 2.6 - 1.3
-        if (!inHeart(x, y)) return false
-      }
-    return true
+  const R = m / 2 // 반원 반지름 (마름모 한 변의 절반)
+
+  // 격자 좌표 (u: 가로, v: 세로) — QR 은 [0, m) × [0, m)
+  // 반원: u = 0 변 바깥쪽(u<0), v = 0 변 바깥쪽(v<0)
+  const inLobe = (u: number, v: number) =>
+    (u < 0 && (u + 0.5) ** 2 + (v + 0.5 - R) ** 2 <= R * R) || (v < 0 && (v + 0.5) ** 2 + (u + 0.5 - R) ** 2 <= R * R)
+  // 모서리 위치 표시(7×7) 둘레 한 칸은 비워 둠
+  const nearFinder = (u: number, v: number) => {
+    const boxes = [
+      [0, 0],
+      [m - 7, 0],
+      [0, m - 7],
+    ]
+    return boxes.some(([bu, bv]) => u >= bu - 1 && u <= bu + 7 && v >= bv - 1 && v <= bv + 7)
   }
-  let G = m + quiet * 2
-  let offY = 0
-  search: for (; G < m * 4; G++) {
-    for (let oy = 0; oy + m <= G; oy++)
-      if (fitsAt(G, oy)) {
-        offY = oy
-        break search
-      }
-  }
-  const offX = Math.round((G - m) / 2)
+
   const size = opts.size ?? 1200
-  const pad = size * 0.06
-  const cell = (size - pad * 2) / G
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
@@ -58,57 +34,40 @@ export async function heartQrDataUrl(text: string, opts: { dark: string; soft: s
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, size, size)
 
-  const dot = (c: number, r: number, color: string, scale = 0.86) => {
-    const x = pad + c * cell + (cell * (1 - scale)) / 2
-    const y = pad + r * cell + (cell * (1 - scale)) / 2
-    const s = cell * scale
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.roundRect(x, y, s, s, s * 0.32)
-    ctx.fill()
-  }
+  // 45° 돌린 하트의 바깥 경계 (회전 좌표: x = (u − v)/√2, y = (u + v)/√2)
+  //  - 반원 중심 (0, R)·(R, 0) → x = ∓R/√2, y = R/√2  → 가장 바깥 = 중심 ± R
+  //  - 아래 꼭짓점 (m, m) → y = √2·m
+  const S = Math.SQRT2
+  const maxX = R / S + R
+  const minX = -maxX
+  const topY = R / S - R
+  const bottomY = S * m
+  const w = maxX - minX
+  const h = bottomY - topY
+  const pad = size * 0.07
+  const cell = (size - pad * 2) / Math.max(w, h)
+  const ox = size / 2 - ((minX + maxX) / 2) * cell
+  const oy = pad + (size - pad * 2 - h * cell) / 2 - topY * cell
 
-  // 1) 하트를 채우는 장식 점 (QR 영역과 여백은 비움)
-  let seed = 7
+  ctx.save()
+  ctx.translate(ox, oy)
+  ctx.rotate(Math.PI / 4)
+  ctx.fillStyle = opts.dark
+  const sq = (u: number, v: number) => ctx.fillRect(u * cell, v * cell, cell + 0.6, cell + 0.6)
+
+  // 1) 위쪽 반원 두 개 — QR 과 같은 점무늬(무작위)로 채움
+  let seed = 11
   const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280)
-  for (let r = 0; r < G; r++)
-    for (let c = 0; c < G; c++) {
-      const x = ((c + 0.5) / G) * 2.6 - 1.3
-      const y = ((r + 0.5) / G) * 2.6 - 1.3
-      const inQrZone = c >= offX - quiet && c < offX + m + quiet && r >= offY - quiet && r < offY + m + quiet
-      if (!inHeart(x, y) || inQrZone) continue
-      if (rnd() < 0.62) dot(c, r, opts.soft, 0.8)
+  for (let v = Math.floor(-R) - 1; v < m; v++)
+    for (let u = Math.floor(-R) - 1; u < m; u++) {
+      if (!inLobe(u, v) || nearFinder(u, v)) continue
+      if (rnd() < 0.5) sq(u, v)
     }
 
-  // 2) 실제 QR 코드 (흰 바탕 위에 진한 색)
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(pad + (offX - 1) * cell, pad + (offY - 1) * cell, (m + 2) * cell, (m + 2) * cell)
-  const isFinder = (r: number, c: number) => (r < 7 && c < 7) || (r < 7 && c >= m - 7) || (r >= m - 7 && c < 7)
-  for (let r = 0; r < m; r++)
-    for (let c = 0; c < m; c++) {
-      if (isFinder(r, c)) continue
-      if (data[r * m + c]) dot(offX + c, offY + r, opts.dark, 0.9)
-    }
-  // 위치 표시(모서리 큰 네모)는 둥근 사각형으로
-  const finder = (fr: number, fc: number) => {
-    const x = pad + (offX + fc) * cell
-    const y = pad + (offY + fr) * cell
-    ctx.fillStyle = opts.dark
-    ctx.beginPath()
-    ctx.roundRect(x, y, cell * 7, cell * 7, cell * 1.8)
-    ctx.fill()
-    ctx.fillStyle = '#ffffff'
-    ctx.beginPath()
-    ctx.roundRect(x + cell, y + cell, cell * 5, cell * 5, cell * 1.3)
-    ctx.fill()
-    ctx.fillStyle = opts.dark
-    ctx.beginPath()
-    ctx.roundRect(x + cell * 2, y + cell * 2, cell * 3, cell * 3, cell * 0.9)
-    ctx.fill()
-  }
-  finder(0, 0)
-  finder(0, m - 7)
-  finder(m - 7, 0)
+  // 2) 실제 QR 코드
+  for (let v = 0; v < m; v++)
+    for (let u = 0; u < m; u++) if (data[v * m + u]) sq(u, v)
+  ctx.restore()
 
   return canvas.toDataURL('image/png')
 }
