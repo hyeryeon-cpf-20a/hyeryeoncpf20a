@@ -1,7 +1,6 @@
 // Vercel 서버리스 함수: /invite/:slug 요청에 게시된 청첩장의 제목·설명·대표 이미지를
 // Open Graph 메타 태그로 넣어 줍니다. (카카오톡·문자 링크 미리보기용)
-// 나머지 화면은 동일한 SPA(app.html — 빌드 후 index.html 을 이름만 바꾼 것)가 그대로 렌더링합니다.
-// index.html 이 그대로 있으면 Vercel 이 기본 주소(/)에서 그 파일을 먼저 보내 OG 태그가 바뀌지 않기 때문입니다.
+// 나머지 화면은 동일한 SPA(index.html)가 그대로 렌더링합니다.
 
 const esc = (s) =>
   String(s ?? '')
@@ -25,10 +24,10 @@ export default async function handler(req, res) {
 
   let html
   try {
-    const r = await fetch(`${origin}/app.html`)
+    const r = await fetch(`${origin}/index.html`)
     html = await r.text()
   } catch {
-    res.status(502).send('app.html unavailable')
+    res.status(502).send('index.html unavailable')
     return
   }
 

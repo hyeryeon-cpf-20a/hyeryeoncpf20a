@@ -5,16 +5,12 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/api/invite"
-    },
-    {
       "source": "/invite/:slug",
       "destination": "/api/invite?slug=:slug"
     },
     {
-      "source": "/((?!api/|assets/|samples/|textures/).*)",
-      "destination": "/app.html"
+      "source": "/((?!api/|assets/|samples/).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -24,15 +20,6 @@
         {
           "key": "Cache-Control",
           "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/app.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache"
         }
       ]
     },
