@@ -246,6 +246,8 @@ export function Envelope({ section, onOpened, onReveal, pageY, cardSection }: Pr
                   backgroundColor: s.envelopeColor,
                   borderRadius: 6,
                   boxShadow: '0 1px 2px rgba(81,74,67,.06), 0 6px 14px -8px rgba(81,74,67,.14)',
+                  // 봉투 윗변 선은 뒷면에 — 올라오는 카드가 선보다 앞에 보이도록
+                  borderTop: outline ? `1px solid ${outline}` : undefined,
                   zIndex: 0,
                 }}
               >
@@ -296,7 +298,7 @@ export function Envelope({ section, onOpened, onReveal, pageY, cardSection }: Pr
                 <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
                   <path d={`M0 100 L50 ${FLAP * 100 - 3} L100 100`} fill="none" stroke={foldStroke} strokeWidth={outline ? 0.8 : 0.35} vectorEffect="non-scaling-stroke" />
                   {/* 봉투 바깥 테두리 */}
-                  {outline && <rect x="0" y="0" width="100" height="100" fill="none" stroke={outline} strokeWidth={strokeW} vectorEffect="non-scaling-stroke" />}
+                  {outline && <path d="M0 0 L0 100 L100 100 L100 0" fill="none" stroke={outline} strokeWidth={strokeW} vectorEffect="non-scaling-stroke" />}
                 </svg>
               </div>
 

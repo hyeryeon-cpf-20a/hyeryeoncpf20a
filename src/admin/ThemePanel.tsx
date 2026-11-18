@@ -29,7 +29,7 @@ const DESIGN_THEMES = [
     desc: '아이보리 · 샴페인 골드 · 실링왁스',
     swatch: ['#FAF9F6', '#B8A489', '#A86B69'],
     colors: PALETTE,
-    envelope: { envelopeColor: '#F7F3EC', liningColor: '#EFE8DC', texture: 'cotton' as const, outlineColor: '', closure: 'seal' as const, waxColor: PALETTE.wax },
+    envelope: { envStyle: 'classic' as const, envelopeColor: '#F7F3EC', liningColor: '#EFE8DC', texture: 'cotton' as const, outlineColor: '', closure: 'seal' as const, waxColor: PALETTE.wax },
     highlight: PALETTE.wax,
   },
   {
@@ -38,8 +38,28 @@ const DESIGN_THEMES = [
     desc: '블랙 · 화이트 · 핑크 실링왁스',
     swatch: ['#FFFFFF', '#1A1A1A', '#E58AA8'],
     colors: { bg: '#FFFFFF', bg2: '#FFF6F9', text: '#1A1A1A', accent: '#E58AA8', sage: '#F6D3DF', wax: '#EC8FAE', muted: '#8C8C8C' },
-    envelope: { envelopeColor: '#FFFFFF', liningColor: '#FCE6EE', texture: 'smooth' as const, outlineColor: '#1A1A1A', closure: 'seal' as const, waxColor: '#E58AA8' },
+    envelope: { envStyle: 'classic' as const, envelopeColor: '#FFFFFF', liningColor: '#FCE6EE', texture: 'smooth' as const, outlineColor: '#1A1A1A', closure: 'seal' as const, waxColor: '#E58AA8' },
     highlight: '#EC8FAE',
+  },
+  {
+    id: 'pearl',
+    name: '진주',
+    desc: '블랙 · 화이트 · 진주펄',
+    swatch: ['#FFFFFF', '#151515', '#E9E5DF'],
+    colors: { bg: '#FFFFFF', bg2: '#F6F5F2', text: '#151515', accent: '#A39D95', sage: '#E7E3DD', wax: '#CFC9C1', muted: '#8E8984' },
+    envelope: {
+      envStyle: 'pearl' as const,
+      envelopeColor: '#F8F7F4',
+      liningColor: '#EFECE7',
+      texture: 'cotton' as const,
+      outlineColor: '',
+      closure: 'seal' as const,
+      pearlDots: true,
+      pearlClosure: 'pearl' as const,
+      waxColor: '#F1EEE8',
+      waxEmblem: 'flower' as const,
+    },
+    highlight: '#151515',
   },
 ]
 
@@ -55,7 +75,7 @@ export function ThemePanel() {
       </div>
 
       <Group title="디자인 테마">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {DESIGN_THEMES.map((t) => {
             const on = t.colors.bg.toUpperCase() === draft.theme.colors.bg.toUpperCase() && t.colors.text.toUpperCase() === draft.theme.colors.text.toUpperCase()
             return (
@@ -84,7 +104,7 @@ export function ThemePanel() {
             )
           })}
         </div>
-        <p className="text-[11px] text-stone-400">색상, 봉투, 실링왁스 색, 달력 강조색이 한 번에 바뀌어요. 아래에서 하나씩 더 바꿀 수 있어요.</p>
+        <p className="text-[11px] text-stone-400">색상, 봉투 모양, 실링왁스·진주, 달력 강조색이 한 번에 바뀌어요. 아래에서 하나씩 더 바꿀 수 있어요.</p>
       </Group>
 
       <Group title="결혼식 일시">

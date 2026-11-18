@@ -155,6 +155,31 @@ function EnvelopeEditor({ id }: { id: string }) {
         />
         <TextInput label="안내 문구" value={s.hint} onChange={(v) => set((x) => void (x.hint = v))} />
       </Group>
+      <Group title="봉투 스타일">
+        <Segmented
+          value={s.envStyle === 'pearl' ? 'pearl' : 'classic'}
+          onChange={(v) => set((x) => void (x.envStyle = v))}
+          options={[
+            { value: 'classic', label: '클래식 (삼각 덮개)' },
+            { value: 'pearl', label: '진주 (곡선 덮개)' },
+          ]}
+        />
+        {s.envStyle === 'pearl' && (
+          <>
+            <TextArea label="위쪽 안내 문구" value={s.pearlTopText} rows={2} onChange={(v) => set((x) => void (x.pearlTopText = v))} hint="이름은 ‘기본 정보’의 영문 이름, 날짜는 결혼 날짜가 자동으로 들어가요." />
+            <Segmented
+              label="가운데 장식"
+              value={s.pearlClosure === 'seal' ? 'seal' : 'pearl'}
+              onChange={(v) => set((x) => void (x.pearlClosure = v))}
+              options={[
+                { value: 'pearl', label: '진주 한 알' },
+                { value: 'seal', label: '실링왁스' },
+              ]}
+            />
+            <Toggle label="작은 진주 흩뿌리기" checked={s.pearlDots} onChange={(v) => set((x) => void (x.pearlDots = v))} />
+          </>
+        )}
+      </Group>
       <Group title="봉투 테두리">
         <Toggle label="봉투 테두리 선" checked={!!s.outlineColor} onChange={(v) => set((x) => void (x.outlineColor = v ? '#1A1A1A' : ''))} />
         {s.outlineColor && <ColorInput label="테두리 선 색" value={s.outlineColor} onChange={(v) => set((x) => void (x.outlineColor = v))} presets={['#1A1A1A', '#514A43', '#E58AA8', '#B8A489']} />}

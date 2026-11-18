@@ -7,6 +7,7 @@ import { InviteProvider } from './context'
 import { RsvpModal, OPEN_RSVP_EVENT } from './RsvpModal'
 import { isBackendConfigured } from '../lib/supabase'
 import { Envelope } from './Envelope'
+import { PearlEnvelope } from './PearlEnvelope'
 import { SideNav } from './SideNav'
 import { MainSection } from './sections/MainSection'
 import { StorySection } from './sections/StorySection'
@@ -203,6 +204,21 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
       </div>
       <SideNav sections={visible} visible={!envOpen} />
       {envelope && envOpen && (
+        envelope.settings.envStyle === 'pearl' ? (
+        <PearlEnvelope
+          key={options.envelopeKey ?? 0}
+          section={envelope}
+          pageY={pageY}
+          onReveal={() => setReady(true)}
+          onOpened={() => {
+            if (rsvpOn) setTimeout(() => setRsvpOpen(true), 700)
+            safeStorage().set(storeKey, '1')
+            pageY.set(0)
+            setEnvOpen(false)
+            setReady(true)
+          }}
+        />
+        ) : (
         <Envelope
           key={options.envelopeKey ?? 0}
           section={envelope}
@@ -217,6 +233,7 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
             setReady(true)
           }}
         />
+        )
       )}
       {rsvpOn && <RsvpModal open={rsvpOpen} onClose={() => setRsvpOpen(false)} />}
     </InviteProvider>
