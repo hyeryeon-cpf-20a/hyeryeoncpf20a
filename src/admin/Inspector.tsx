@@ -157,17 +157,13 @@ function EnvelopeEditor({ id }: { id: string }) {
       </Group>
       <Group title="봉투 스타일">
         <Segmented
-          value={s.envStyle === 'pearl' ? 'pearl' : s.envStyle === 'gate' ? 'gate' : 'classic'}
+          value={s.envStyle === 'pearl' ? 'pearl' : 'classic'}
           onChange={(v) => set((x) => void (x.envStyle = v))}
           options={[
-            { value: 'classic', label: '클래식' },
-            { value: 'pearl', label: '진주 곡선' },
-            { value: 'gate', label: '리본 양문형' },
+            { value: 'classic', label: '클래식 (삼각 덮개)' },
+            { value: 'pearl', label: '진주 (곡선 덮개)' },
           ]}
         />
-        {s.envStyle === 'gate' && (
-          <ColorInput label="리본 색상" value={s.ribbonColor} onChange={(v) => set((x) => void (x.ribbonColor = v))} presets={['#F4C3D2', '#F7D6E0', '#E9A3B9', '#1A1A1A', '#FFFFFF']} />
-        )}
         {s.envStyle === 'pearl' && (
           <>
             <TextArea label="위쪽 안내 문구" value={s.pearlTopText} rows={2} onChange={(v) => set((x) => void (x.pearlTopText = v))} hint="이름은 ‘기본 정보’의 영문 이름, 날짜는 결혼 날짜가 자동으로 들어가요." />
@@ -180,7 +176,6 @@ function EnvelopeEditor({ id }: { id: string }) {
                 { value: 'seal', label: '실링왁스' },
               ]}
             />
-            <Toggle label="작은 진주 흩뿌리기" checked={s.pearlDots} onChange={(v) => set((x) => void (x.pearlDots = v))} />
           </>
         )}
       </Group>
@@ -189,18 +184,19 @@ function EnvelopeEditor({ id }: { id: string }) {
         {s.outlineColor && <ColorInput label="테두리 선 색" value={s.outlineColor} onChange={(v) => set((x) => void (x.outlineColor = v))} presets={['#1A1A1A', '#514A43', '#E58AA8', '#B8A489']} />}
       </Group>
       <Group title="실링왁스">
-        <ColorInput label="왁스 색상" value={s.waxColor} onChange={(v) => set((x) => void (x.waxColor = v))} presets={[PALETTE.wax, '#8E5A57', '#B8A489', '#8C9A80', '#6F6259', '#C9A0A0', '#E58AA8', '#1A1A1A']} />
+        <ColorInput label="왁스 색상" value={s.waxColor} onChange={(v) => set((x) => void (x.waxColor = v))} presets={['#ECE9E4', PALETTE.wax, '#8E5A57', '#B8A489', '#8C9A80', '#6F6259', '#C9A0A0', '#E58AA8', '#1A1A1A']} />
         <Segmented
           label="문양"
-          value={(['initials', 'heart', 'flower'] as const).includes(s.waxEmblem) ? s.waxEmblem : 'initials'}
+          value={(['initials', 'heart', 'flower', 'shell'] as const).includes(s.waxEmblem) ? s.waxEmblem : 'initials'}
           onChange={(v) => set((x) => void (x.waxEmblem = v))}
           options={[
             { value: 'initials', label: '이니셜' },
             { value: 'heart', label: '하트' },
             { value: 'flower', label: '꽃' },
+            { value: 'shell', label: '조개' },
           ]}
         />
-        {!['heart', 'flower'].includes(s.waxEmblem) && (
+        {!['heart', 'flower', 'shell'].includes(s.waxEmblem) && (
           <TextInput label="실링에 넣을 글자" value={s.waxInitials} onChange={(v) => set((x) => void (x.waxInitials = v))} maxLength={7} hint="예: C & J · 최대 7자" />
         )}
       </Group>

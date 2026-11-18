@@ -89,8 +89,6 @@ export function defaultSettings<T extends SectionType>(type: T): SettingsOf<T> {
       showOnEveryVisit: true,
       startView: 'closeup',
       envStyle: 'classic',
-      ribbonColor: '#F4C3D2',
-      pearlDots: true,
       pearlClosure: 'pearl',
       pearlTopText: 'Together with our families\nwe joyfully invite you',
       closure: 'seal',

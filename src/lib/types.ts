@@ -57,16 +57,14 @@ export interface EnvelopeSettings {
   liningColor: string
   texture: 'smooth' | 'linen' | 'cotton' | 'felt'
   waxColor: string
-  waxEmblem: 'initials' | 'heart' | 'flower'
+  waxEmblem: 'initials' | 'heart' | 'flower' | 'shell'
   waxInitials: string
   speed: number // 0.5(느리게) ~ 2(빠르게)
   hint: string
   cardText: string
   showOnEveryVisit: boolean
-  envStyle: 'classic' | 'pearl' | 'gate' // 클래식 / 진주(곡선 덮개) / 리본(양문형 + 새틴 리본 끈)
-  ribbonColor: string // 양문형 봉투의 리본 색
+  envStyle: 'classic' | 'pearl' // 클래식(삼각 덮개) / 진주(곡선 덮개)
   pearlTopText: string
-  pearlDots: boolean // 작은 진주 흩뿌리기
   pearlClosure: 'pearl' | 'seal' // 가운데 장식: 진주 한 알 / 실링왁스
   closure: 'seal' | 'bow' // (이전 설정 호환)
   bowColor: string

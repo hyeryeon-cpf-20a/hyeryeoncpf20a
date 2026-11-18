@@ -33,15 +33,6 @@ const DESIGN_THEMES = [
     highlight: PALETTE.wax,
   },
   {
-    id: 'ribboncore',
-    name: '리본코어',
-    desc: '블랙 · 화이트 · 핑크 새틴 리본',
-    swatch: ['#FFFFFF', '#1A1A1A', '#F4C3D2'],
-    colors: { bg: '#FFFFFF', bg2: '#FFF6F9', text: '#1A1A1A', accent: '#E58AA8', sage: '#F6D3DF', wax: '#EC8FAE', muted: '#8C8C8C' },
-    envelope: { envStyle: 'gate' as const, envelopeColor: '#FBFAF8', liningColor: '#FCEFF3', texture: 'smooth' as const, outlineColor: '', closure: 'seal' as const, waxColor: '#E58AA8', ribbonColor: '#F4C3D2' },
-    highlight: '#EC8FAE',
-  },
-  {
     id: 'pearl',
     name: '진주',
     desc: '블랙 · 화이트 · 진주펄',
@@ -54,10 +45,9 @@ const DESIGN_THEMES = [
       texture: 'cotton' as const,
       outlineColor: '',
       closure: 'seal' as const,
-      pearlDots: true,
-      pearlClosure: 'pearl' as const,
-      waxColor: '#F1EEE8',
-      waxEmblem: 'flower' as const,
+      pearlClosure: 'seal' as const,
+      waxColor: '#ECE9E4',
+      waxEmblem: 'shell' as const,
     },
     highlight: '#151515',
   },
@@ -75,7 +65,7 @@ export function ThemePanel() {
       </div>
 
       <Group title="디자인 테마">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {DESIGN_THEMES.map((t) => {
             const on = t.colors.bg.toUpperCase() === draft.theme.colors.bg.toUpperCase() && t.colors.text.toUpperCase() === draft.theme.colors.text.toUpperCase()
             return (

@@ -112,33 +112,6 @@ export function PearlEnvelope({
   const names = [content.couple.groomEn, content.couple.brideEn].filter(Boolean)
   const nameChars = names.join('').length + 3
   const nameSize = Math.max(18, Math.min(30, (Math.min(W, 430) * 0.8) / (nameChars * 0.72)))
-  // 흩뿌린 작은 진주 (글씨·가운데 장식 자리는 비움)
-  const dots = (() => {
-    if (!s.pearlDots) return { top: [] as [number, number][], bottom: [] as [number, number][] }
-    const gap = Math.min(W, 430) / 4.6
-    const blocked = (x: number, y: number) =>
-      (y > H * 0.08 && y < H * 0.2 && Math.abs(x - W / 2) < W * 0.42) || // 위 문구
-      (y > H * 0.25 && y < H * 0.43) || // 이름
-      (Math.abs(x - W / 2) < gap * 0.9 && Math.abs(y - tip) < gap * 0.9) || // 가운데 장식
-      (y > H * 0.71 && y < H * 0.85 && Math.abs(x - W / 2) < W * 0.4) || // 날짜
-      y > H * 0.9
-    const top: [number, number][] = []
-    const bottom: [number, number][] = []
-    let row = 0
-    for (let y = gap * 0.55; y < H; y += gap * 0.82, row++) {
-      for (let x = (row % 2 ? gap / 2 : 0) + gap * 0.3; x < W; x += gap) {
-        if (blocked(x, y)) continue
-        // 위 덮개 안쪽인지 (호 아래쪽 경계 위)
-        const dx = x - W / 2
-        const yTopEdge = tip - (r1 - Math.sqrt(Math.max(0, r1 * r1 - dx * dx)))
-        const yBottomEdge = peak + (r2 - Math.sqrt(Math.max(0, r2 * r2 - dx * dx)))
-        if (y < yTopEdge - 8) top.push([x, y])
-        else if (y > yBottomEdge + 10) bottom.push([x, y])
-      }
-    }
-    return { top, bottom }
-  })()
-  const dotSize = Math.round(Math.min(W, 430) * 0.032)
   const paper = { backgroundColor: s.envelopeColor || '#F7F6F3', backgroundImage: "url('/textures/felt.png'), url('/textures/cotton.png')" }
 
   async function open() {
@@ -187,11 +160,6 @@ export function PearlEnvelope({
       {/* 아래 덮개 + 날짜 */}
       <div ref={bottom} className="absolute inset-0" style={{ filter: 'drop-shadow(0 -2px 6px rgba(40,34,30,.10))', willChange: 'transform' }}>
         <div className="absolute inset-0" style={{ ...paper, clipPath: `path('${bottomPath}')` }} />
-        {dots.bottom.map(([x, y], i) => (
-          <span key={i} className="absolute" style={{ left: x - dotSize / 2, top: y - dotSize / 2 }}>
-            <Pearl size={dotSize} />
-          </span>
-        ))}
         <div className="absolute inset-x-0 text-center" style={{ top: H * 0.75 }}>
           <p className="text-[1rem] tracking-[0.04em]" style={{ ...serif, color: 'var(--c-text)' }}>
             {dateLine}
@@ -207,11 +175,6 @@ export function PearlEnvelope({
         style={{ transformOrigin: '50% 0%', filter: 'drop-shadow(0 4px 8px rgba(40,34,30,.14))', willChange: 'transform' }}
       >
         <div className="absolute inset-0" style={{ ...paper, clipPath: `path('${topPath}')` }} />
-        {dots.top.map(([x, y], i) => (
-          <span key={i} className="absolute" style={{ left: x - dotSize / 2, top: y - dotSize / 2 }}>
-            <Pearl size={dotSize} />
-          </span>
-        ))}
         <div className="absolute inset-x-0 px-8 text-center" style={{ top: H * 0.11 }}>
           <p className="whitespace-pre-line text-[0.82rem] uppercase leading-[1.7] tracking-[0.12em]" style={{ ...serif, color: 'var(--c-muted)' }}>
             {s.pearlTopText}
