@@ -1,11 +1,21 @@
 import QRCode from 'qrcode'
 
-/** 하트 안에 들어가 있는지 (x, y: -1.3~1.3 범위, 위가 -y) */
+/**
+ * 통통한 하트 (좌표: x −1.3~1.3, y −1.3~1.3, 아래가 +y).
+ * 위쪽 두 원 + 아래로 모이는 몸통 — 가운데에 큰 정사각형(QR)이 들어갈 수 있는 모양.
+ */
 function inHeart(x: number, y: number) {
-  // 고전적인 하트 곡선 (x² + y² − 1)³ − x²·y³ ≤ 0 (y 는 위쪽이 +)
-  const yy = -y
-  const a = x * x + yy * yy - 1
-  return a * a * a - x * x * yy * yy * yy <= 0
+  const R = 0.66
+  const cy = -0.42
+  const cx = 0.6
+  if ((x - cx) ** 2 + (y - cy) ** 2 <= R * R) return true
+  if ((x + cx) ** 2 + (y - cy) ** 2 <= R * R) return true
+  // 몸통: 원의 바깥쪽 끝에서 아래 꼭짓점(0, 1.22)까지 부드럽게 좁아짐
+  const tip = 1.27
+  if (y < cy || y > tip) return false
+  const t = (y - cy) / (tip - cy) // 0(위) → 1(꼭짓점)
+  const half = (cx + R) * Math.cos((t * Math.PI) / 2) ** 0.62
+  return Math.abs(x) <= half
 }
 
 /**
@@ -17,24 +27,27 @@ export async function heartQrDataUrl(text: string, opts: { dark: string; soft: s
   const m = qr.modules.size
   const data = qr.modules.data
   const quiet = 2 // QR 주변 빈 칸
-  // 하트 격자 크기: QR(+여백)이 하트 안에 다 들어갈 때까지 키움
-  let G = m + quiet * 2 + 6
-  const qrTopRatio = 0.3 // QR 을 하트의 위쪽 넓은 부분에 배치
-  const fits = (g: number) => {
+  // QR(+여백)이 하트 안에 들어가는 가장 작은 격자를 찾아 QR 을 최대한 크게
+  const fitsAt = (g: number, offY: number) => {
     const off = Math.round((g - m) / 2)
-    const offY = Math.round(g * qrTopRatio)
     for (let r = -quiet; r < m + quiet; r++)
       for (let c = -quiet; c < m + quiet; c++) {
         const x = ((off + c + 0.5) / g) * 2.6 - 1.3
-        const y = ((offY + r + 0.5) / g) * 2.6 - 1.45
+        const y = ((offY + r + 0.5) / g) * 2.6 - 1.3
         if (!inHeart(x, y)) return false
       }
     return true
   }
-  while (!fits(G) && G < m * 4) G++
+  let G = m + quiet * 2
+  let offY = 0
+  search: for (; G < m * 4; G++) {
+    for (let oy = 0; oy + m <= G; oy++)
+      if (fitsAt(G, oy)) {
+        offY = oy
+        break search
+      }
+  }
   const offX = Math.round((G - m) / 2)
-  const offY = Math.round(G * qrTopRatio)
-
   const size = opts.size ?? 1200
   const pad = size * 0.06
   const cell = (size - pad * 2) / G
@@ -61,10 +74,10 @@ export async function heartQrDataUrl(text: string, opts: { dark: string; soft: s
   for (let r = 0; r < G; r++)
     for (let c = 0; c < G; c++) {
       const x = ((c + 0.5) / G) * 2.6 - 1.3
-      const y = ((r + 0.5) / G) * 2.6 - 1.45
+      const y = ((r + 0.5) / G) * 2.6 - 1.3
       const inQrZone = c >= offX - quiet && c < offX + m + quiet && r >= offY - quiet && r < offY + m + quiet
       if (!inHeart(x, y) || inQrZone) continue
-      if (rnd() < 0.52) dot(c, r, opts.soft, 0.78)
+      if (rnd() < 0.62) dot(c, r, opts.soft, 0.8)
     }
 
   // 2) 실제 QR 코드 (흰 바탕 위에 진한 색)
