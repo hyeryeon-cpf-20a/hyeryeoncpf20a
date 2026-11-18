@@ -181,9 +181,18 @@ export function RsvpModal({ open, onClose }: { open: boolean; onClose: () => voi
                   </p>
                 )}
                 {saved && (
-                  <p className="mx-auto mt-4 rounded-full px-3 py-1.5 text-[0.76rem]" style={{ background: 'color-mix(in srgb, var(--c-accent) 14%, transparent)' }}>
-                    이전에 <b className="font-medium">{prevLabel}</b>(으)로 회신하셨어요 · 다시 보내면 수정돼요
-                  </p>
+                  // 이미 회신한 분은 스크롤하지 않아도 바로 닫을 수 있게 맨 위에
+                  <div className="mx-auto mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--c-accent) 14%, transparent)' }}>
+                    <p className="text-[0.8rem]">
+                      이전에 <b className="font-medium">{prevLabel}</b>(으)로 회신하셨어요
+                    </p>
+                    <button type="button" className="tap btn-primary mt-3 w-full !py-2.5" onClick={onClose}>
+                      이미 회신했어요
+                    </button>
+                    <p className="mt-2 text-[0.72rem]" style={{ color: 'var(--c-muted)' }}>
+                      바꾸시려면 아래에서 다시 보내 주세요
+                    </p>
+                  </div>
                 )}
 
                 <div className="mt-6 space-y-4 text-left">
@@ -278,9 +287,11 @@ export function RsvpModal({ open, onClose }: { open: boolean; onClose: () => voi
                     미리보기에서는 회신이 저장되지 않아요.
                   </p>
                 )}
-                <button type="button" className="tap mt-4 w-full py-2 text-[0.8rem] underline underline-offset-4" style={{ color: 'var(--c-muted)' }} onClick={onClose}>
-                  이미 회신했어요
-                </button>
+                {!saved && (
+                  <button type="button" className="tap mt-4 w-full py-2 text-[0.8rem] underline underline-offset-4" style={{ color: 'var(--c-muted)' }} onClick={onClose}>
+                    이미 회신했어요
+                  </button>
+                )}
               </div>
             ) : (
               <motion.div className="py-6 text-center" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>

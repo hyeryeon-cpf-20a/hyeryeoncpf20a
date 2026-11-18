@@ -13,8 +13,8 @@
       "destination": "/api/invite?slug=:slug"
     },
     {
-      "source": "/((?!api/|assets/|samples/).*)",
-      "destination": "/index.html"
+      "source": "/((?!api/|assets/|samples/|textures/).*)",
+      "destination": "/app.html"
     }
   ],
   "headers": [
