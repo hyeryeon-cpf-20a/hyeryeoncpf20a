@@ -157,13 +157,17 @@ function EnvelopeEditor({ id }: { id: string }) {
       </Group>
       <Group title="봉투 스타일">
         <Segmented
-          value={s.envStyle === 'pearl' ? 'pearl' : 'classic'}
+          value={s.envStyle === 'pearl' ? 'pearl' : s.envStyle === 'gate' ? 'gate' : 'classic'}
           onChange={(v) => set((x) => void (x.envStyle = v))}
           options={[
-            { value: 'classic', label: '클래식 (삼각 덮개)' },
-            { value: 'pearl', label: '진주 (곡선 덮개)' },
+            { value: 'classic', label: '클래식' },
+            { value: 'pearl', label: '진주 곡선' },
+            { value: 'gate', label: '리본 양문형' },
           ]}
         />
+        {s.envStyle === 'gate' && (
+          <ColorInput label="리본 색상" value={s.ribbonColor} onChange={(v) => set((x) => void (x.ribbonColor = v))} presets={['#F4C3D2', '#F7D6E0', '#E9A3B9', '#1A1A1A', '#FFFFFF']} />
+        )}
         {s.envStyle === 'pearl' && (
           <>
             <TextArea label="위쪽 안내 문구" value={s.pearlTopText} rows={2} onChange={(v) => set((x) => void (x.pearlTopText = v))} hint="이름은 ‘기본 정보’의 영문 이름, 날짜는 결혼 날짜가 자동으로 들어가요." />

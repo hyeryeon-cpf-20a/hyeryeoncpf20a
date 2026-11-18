@@ -8,6 +8,7 @@ import { RsvpModal, OPEN_RSVP_EVENT } from './RsvpModal'
 import { isBackendConfigured } from '../lib/supabase'
 import { Envelope } from './Envelope'
 import { PearlEnvelope } from './PearlEnvelope'
+import { GateEnvelope } from './GateEnvelope'
 import { SideNav } from './SideNav'
 import { MainSection } from './sections/MainSection'
 import { StorySection } from './sections/StorySection'
@@ -204,7 +205,21 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
       </div>
       <SideNav sections={visible} visible={!envOpen} />
       {envelope && envOpen && (
-        envelope.settings.envStyle === 'pearl' ? (
+        envelope.settings.envStyle === 'gate' ? (
+        <GateEnvelope
+          key={options.envelopeKey ?? 0}
+          section={envelope}
+          pageY={pageY}
+          onReveal={() => setReady(true)}
+          onOpened={() => {
+            if (rsvpOn) setTimeout(() => setRsvpOpen(true), 700)
+            safeStorage().set(storeKey, '1')
+            pageY.set(0)
+            setEnvOpen(false)
+            setReady(true)
+          }}
+        />
+        ) : envelope.settings.envStyle === 'pearl' ? (
         <PearlEnvelope
           key={options.envelopeKey ?? 0}
           section={envelope}

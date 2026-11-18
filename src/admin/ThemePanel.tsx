@@ -35,10 +35,10 @@ const DESIGN_THEMES = [
   {
     id: 'ribboncore',
     name: '리본코어',
-    desc: '블랙 · 화이트 · 핑크 실링왁스',
-    swatch: ['#FFFFFF', '#1A1A1A', '#E58AA8'],
+    desc: '블랙 · 화이트 · 핑크 새틴 리본',
+    swatch: ['#FFFFFF', '#1A1A1A', '#F4C3D2'],
     colors: { bg: '#FFFFFF', bg2: '#FFF6F9', text: '#1A1A1A', accent: '#E58AA8', sage: '#F6D3DF', wax: '#EC8FAE', muted: '#8C8C8C' },
-    envelope: { envStyle: 'classic' as const, envelopeColor: '#FFFFFF', liningColor: '#FCE6EE', texture: 'smooth' as const, outlineColor: '#1A1A1A', closure: 'seal' as const, waxColor: '#E58AA8' },
+    envelope: { envStyle: 'gate' as const, envelopeColor: '#FBFAF8', liningColor: '#FCEFF3', texture: 'smooth' as const, outlineColor: '', closure: 'seal' as const, waxColor: '#E58AA8', ribbonColor: '#F4C3D2' },
     highlight: '#EC8FAE',
   },
   {
