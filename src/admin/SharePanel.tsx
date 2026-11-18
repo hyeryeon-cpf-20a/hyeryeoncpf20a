@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
+import { heartQrDataUrl } from '../lib/qr'
 import { inviteUrl, shareImageRef, shareKakao, smsHref } from '../lib/share'
 import { copyText, errorMessage } from '../lib/util'
 import { imageSrc } from '../lib/image'
@@ -9,17 +10,28 @@ import { useEditor } from './EditorContext'
 import { ImageField } from './MediaLibrary'
 import { Btn, Group, TextArea, TextInput } from './ui'
 
+function mixHex(a: string, b: string, t: number) {
+  if (!/^#[0-9a-f]{6}$/i.test(a)) return ''
+  const pa = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16))
+  const pb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16))
+  return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, '0')).join('')
+}
+
 export function SharePanel({ published, isPublished }: { published: InvitationContent | null; isPublished: boolean }) {
   const { draft, update, slug, toast } = useEditor()
   const url = inviteUrl(slug)
   const [qr, setQr] = useState<string>('')
   const [qrDark, setQrDark] = useState(draft.theme.colors.text)
+  const [qrShape, setQrShape] = useState<'heart' | 'square'>('heart')
 
   useEffect(() => {
-    QRCode.toDataURL(url, { width: 1024, margin: 2, color: { dark: qrDark, light: '#FFFFFFFF' }, errorCorrectionLevel: 'M' })
-      .then(setQr)
-      .catch(() => setQr(''))
-  }, [url, qrDark])
+    const soft = `color-mix(in srgb, ${qrDark} 22%, white)`
+    const make =
+      qrShape === 'heart'
+        ? heartQrDataUrl(url, { dark: qrDark, soft: mixHex(qrDark, '#ffffff', 0.78) || soft })
+        : QRCode.toDataURL(url, { width: 1024, margin: 2, color: { dark: qrDark, light: '#FFFFFFFF' }, errorCorrectionLevel: 'M' })
+    make.then(setQr).catch(() => setQr(''))
+  }, [url, qrDark, qrShape])
 
   const shareImg = imageSrc(shareImageRef(draft))
 
@@ -64,6 +76,13 @@ export function SharePanel({ published, isPublished }: { published: InvitationCo
         </div>
         <div className="rounded-2xl border border-stone-200 bg-white p-4 text-center">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-400">QR 코드</p>
+          <div className="mx-auto mb-2 flex w-fit rounded-lg bg-stone-100 p-0.5 text-[11.5px]">
+            {(['heart', 'square'] as const).map((v) => (
+              <button key={v} type="button" onClick={() => setQrShape(v)} className={`rounded-md px-2.5 py-1 ${qrShape === v ? 'bg-white shadow-sm' : 'text-stone-500'}`}>
+                {v === 'heart' ? '하트' : '사각'}
+              </button>
+            ))}
+          </div>
           {qr && <img src={qr} alt="청첩장 QR 코드" className="mx-auto w-full max-w-[180px]" />}
           <div className="mt-2 flex items-center justify-center gap-1.5">
             {[draft.theme.colors.text, '#000000', draft.theme.colors.wax, draft.theme.colors.accent].map((c) => (

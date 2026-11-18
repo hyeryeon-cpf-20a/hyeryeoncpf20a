@@ -64,13 +64,14 @@ function KakaoMap({ appKey, lat, lng, level, onFail }: { appKey: string; lat: nu
 function OsmMap({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) {
   const d = 0.0035 * Math.pow(2, 16 - zoom)
   const bbox = [lng - d, lat - d * 0.7, lng + d, lat + d * 0.7].join(',')
+  // 지도 아래 ‘문제점 보고 · 저작권’ 줄은 틀 밖으로 잘라 내고, 출처는 지도 아래 작은 글씨로 표시
   return (
     <iframe
       title="예식장 위치 지도"
-      className="h-full w-full border-0"
+      className="absolute left-0 top-0 w-full border-0"
       loading="lazy"
       src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`}
-      style={{ filter: 'grayscale(.55) sepia(.12) contrast(.95) brightness(1.03)' }}
+      style={{ height: 'calc(100% + 28px)', filter: 'grayscale(.55) sepia(.12) contrast(.95) brightness(1.03)' }}
     />
   )
 }
@@ -120,6 +121,11 @@ export function LocationSection({ section, selected }: { section: SectionOf<'loc
                 <OsmMap lat={s.lat!} lng={s.lng!} zoom={s.mapZoom} />
               )}
             </div>
+            {!(kakaoKey && !kakaoFailed) && (
+              <p className="mt-1 text-right text-[0.58rem]" style={{ color: 'var(--c-muted)', opacity: 0.7 }}>
+                © OpenStreetMap
+              </p>
+            )}
           </Reveal>
         )}
         <Reveal delay={0.18} className="mt-4 grid grid-cols-3 gap-2 text-[0.8rem]">
