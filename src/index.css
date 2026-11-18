@@ -266,3 +266,13 @@ html.invite-doc body::-webkit-scrollbar {
   outline: 2px solid color-mix(in srgb, var(--c-accent) 70%, transparent);
   outline-offset: -2px;
 }
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}

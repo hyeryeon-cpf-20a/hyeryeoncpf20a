@@ -6,14 +6,16 @@ export interface FontOption {
 }
 
 const g = (q: string) => `https://fonts.googleapis.com/css2?family=${q}&display=swap`
+// 필기체는 준비될 때까지 숨김 — 반듯한 대체 글꼴이 잠깐 보였다가 바뀌지 않게
+const gs = (q: string) => `https://fonts.googleapis.com/css2?family=${q}&display=block`
 
 export const SCRIPT_FONTS: FontOption[] = [
-  { family: 'Great Vibes', label: 'Great Vibes', css: g('Great+Vibes'), fallback: 'cursive' },
-  { family: 'Pinyon Script', label: 'Pinyon Script', css: g('Pinyon+Script'), fallback: 'cursive' },
-  { family: 'Parisienne', label: 'Parisienne', css: g('Parisienne'), fallback: 'cursive' },
-  { family: 'Allura', label: 'Allura', css: g('Allura'), fallback: 'cursive' },
-  { family: 'Monsieur La Doulaise', label: 'Monsieur La Doulaise', css: g('Monsieur+La+Doulaise'), fallback: 'cursive' },
-  { family: 'Italianno', label: 'Italianno', css: g('Italianno'), fallback: 'cursive' },
+  { family: 'Great Vibes', label: 'Great Vibes', css: gs('Great+Vibes'), fallback: 'cursive' },
+  { family: 'Pinyon Script', label: 'Pinyon Script', css: gs('Pinyon+Script'), fallback: 'cursive' },
+  { family: 'Parisienne', label: 'Parisienne', css: gs('Parisienne'), fallback: 'cursive' },
+  { family: 'Allura', label: 'Allura', css: gs('Allura'), fallback: 'cursive' },
+  { family: 'Monsieur La Doulaise', label: 'Monsieur La Doulaise', css: gs('Monsieur+La+Doulaise'), fallback: 'cursive' },
+  { family: 'Italianno', label: 'Italianno', css: gs('Italianno'), fallback: 'cursive' },
 ]
 
 export const SERIF_FONTS: FontOption[] = [

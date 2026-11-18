@@ -15,6 +15,30 @@ function Centered({ children }: { children: React.ReactNode }) {
   )
 }
 
+/** 필기체가 다 받아진 뒤에만 ‘with love’를 보여 줌 (반듯한 글씨가 먼저 보였다 바뀌지 않게) */
+function LoadingScript() {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    let done = false
+    const show = () => !done && ((done = true), setReady(true))
+    try {
+      document.fonts?.load('40px "Great Vibes"').then(show, show)
+    } catch {
+      show()
+    }
+    const t = setTimeout(show, 2500) // 글꼴이 너무 늦으면 그냥 표시
+    return () => clearTimeout(t)
+  }, [])
+  return (
+    <p
+      className="font-script text-[2.4rem]"
+      style={{ opacity: ready ? 0.7 : 0, transition: 'opacity .6s ease', animation: ready ? 'soft-pulse 2.4s ease-in-out .6s infinite' : undefined }}
+    >
+      with love
+    </p>
+  )
+}
+
 export default function InvitePage() {
   const { slug = DEFAULT_SLUG } = useParams()
   const [state, setState] = useState<
@@ -42,7 +66,7 @@ export default function InvitePage() {
   if (state.kind === 'loading')
     return (
       <Centered>
-        <p className="font-script animate-pulse text-[2.4rem] opacity-70">with love</p>
+        <LoadingScript />
       </Centered>
     )
   if (state.kind === 'missing')
