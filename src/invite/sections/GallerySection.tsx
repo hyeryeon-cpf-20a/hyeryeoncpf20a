@@ -202,9 +202,10 @@ function Carousel({ photos, aspect, open }: { photos: GalleryPhoto[]; aspect: As
                     className="absolute inset-0 h-full w-full object-cover"
                     style={{
                       objectPosition: `${p.image.focusX ?? 50}% ${p.image.focusY ?? 50}%`,
-                      filter: on ? 'none' : 'grayscale(1)',
-                      opacity: on ? 1 : 0.6,
-                      transition: 'opacity .3s ease',
+                      // 선택 안 된 사진은 색을 살짝 뺀 톤
+                      filter: on ? 'none' : 'saturate(.4) brightness(1.04)',
+                      opacity: on ? 1 : 0.8,
+                      transition: 'opacity .3s ease, filter .3s ease',
                     }}
                   />
                 )}
