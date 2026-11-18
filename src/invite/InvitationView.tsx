@@ -91,6 +91,22 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
 
   useEffect(() => applyTheme(content), [content])
 
+  // 화면 높이를 한 번만 재서 고정 (휴대폰 주소창이 접혔다 펴져도 섹션·사진 크기가 바뀌지 않게).
+  // 가로 폭이 바뀔 때(휴대폰을 돌릴 때)만 다시 잽니다.
+  useEffect(() => {
+    const r = document.documentElement
+    let lastW = window.innerWidth
+    const set = () => r.style.setProperty('--app-h', `${window.innerHeight}px`)
+    set()
+    const onResize = () => {
+      if (Math.abs(window.innerWidth - lastW) < 2) return
+      lastW = window.innerWidth
+      set()
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
   const envelope = content.sections.find((s) => s.type === 'envelope' && !s.hidden) as SectionOf<'envelope'> | undefined
   const storeKey = `opened:${flags.slug}`
   const initiallyClosed = () => {

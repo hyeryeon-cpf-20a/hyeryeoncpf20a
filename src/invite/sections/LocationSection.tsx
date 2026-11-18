@@ -93,7 +93,7 @@ export function LocationSection({ section, selected }: { section: SectionOf<'loc
   return (
     <SectionShell section={section} selected={selected}>
       {/* 상단: 위치 */}
-      <div className="flex min-h-[46svh] flex-col justify-center">
+      <div className="flex min-h-[calc(var(--app-h,100svh)*0.46)] flex-col justify-center">
         <Reveal>
           <SectionTitle eyebrow={s.eyebrow} title={s.title} />
         </Reveal>

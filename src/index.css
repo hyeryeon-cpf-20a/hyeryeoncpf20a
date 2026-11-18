@@ -119,6 +119,8 @@ html.invite-doc body::-webkit-scrollbar {
 .sec-fit {
   min-height: 100vh;
   min-height: 100svh;
+  /* 처음 열었을 때 잰 화면 높이로 고정 — 스크롤로 주소창이 접혀도 크기가 변하지 않음 */
+  min-height: var(--app-h, 100svh);
 }
 .sec-inner {
   max-width: 430px;

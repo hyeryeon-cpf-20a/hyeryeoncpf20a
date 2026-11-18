@@ -75,7 +75,7 @@ export function StorySection({ section, selected }: { section: SectionOf<'story'
   return (
     <SectionShell section={section} selected={selected}>
       {/* 상단: 소개 */}
-      <div className="flex min-h-[44svh] flex-col justify-center">
+      <div className="flex min-h-[calc(var(--app-h,100svh)*0.44)] flex-col justify-center">
         <Reveal>
           <SectionTitle eyebrow={s.eyebrow} title={s.title} />
         </Reveal>
@@ -89,7 +89,7 @@ export function StorySection({ section, selected }: { section: SectionOf<'story'
         <>
           <div className="mx-auto my-12 h-10 w-px" style={{ background: 'var(--c-accent)', opacity: 0.5 }} />
           {/* 하단: 카운트다운 */}
-          <div className="flex min-h-[36svh] flex-col items-center justify-center">
+          <div className="flex min-h-[calc(var(--app-h,100svh)*0.36)] flex-col items-center justify-center">
             <Reveal>
               <p className="eyebrow">{s.countdownEyebrow}</p>
               <p className="mt-3 text-[0.92rem]" style={{ color: 'var(--c-muted)' }}>

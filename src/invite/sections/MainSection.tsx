@@ -58,7 +58,9 @@ export function MainSection({ section, selected }: { section: SectionOf<'main'>;
           className="mt-7 w-full"
           style={{
             // 화면 한 장에 들어오도록 사진 높이 제한 (비율 유지)
-            width: oval ? `min(76%, calc((100svh - 300px) * ${ratio.toFixed(4)}))` : `min(100%, calc((100svh - 300px) * ${ratio.toFixed(4)}))`,
+            width: oval
+              ? `min(76%, calc((var(--app-h, 100svh) - 300px) * ${ratio.toFixed(4)}))`
+              : `min(100%, calc((var(--app-h, 100svh) - 300px) * ${ratio.toFixed(4)}))`,
             minWidth: oval ? '52%' : '62%',
           }}
           initial={false}
