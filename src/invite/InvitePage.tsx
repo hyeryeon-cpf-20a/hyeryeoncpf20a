@@ -16,11 +16,26 @@ function Centered({ children }: { children: React.ReactNode }) {
 }
 
 /** 필기체가 다 받아진 뒤에만 ‘with love’를 보여 줌 (반듯한 글씨가 먼저 보였다 바뀌지 않게) */
+/** ‘with love’가 실제로 보이기 시작한 시각 — 최소 노출 시간 계산용 */
+let shownAt: Promise<number> | null = null
+let markShown: (t: number) => void = () => {}
+function resetShown() {
+  shownAt = new Promise<number>((r) => (markShown = r))
+}
+resetShown()
+
+const MIN_VISIBLE_MS = 1600 // ‘with love’를 최소 이만큼 보여 줌 (나타나는 0.6초 포함)
+
 function LoadingScript() {
   const [ready, setReady] = useState(false)
   useEffect(() => {
     let done = false
-    const show = () => !done && ((done = true), setReady(true))
+    const show = () => {
+      if (done) return
+      done = true
+      setReady(true)
+      markShown(performance.now())
+    }
     try {
       document.fonts?.load('40px "Great Vibes"').then(show, show)
     } catch {
@@ -48,8 +63,19 @@ export default function InvitePage() {
   useEffect(() => {
     if (!isBackendConfigured) return
     let cancelled = false
+    resetShown()
+    // 데이터가 빨리 와도 ‘with love’를 충분히 보여 준 뒤 넘어감 (글꼴이 안 와도 최대 3초 안에는 넘어감)
+    const waitShown = async () => {
+      const t = await Promise.race([shownAt!, new Promise<number>((r) => setTimeout(() => r(-1), 3000))])
+      if (t < 0) return
+      const left = MIN_VISIBLE_MS - (performance.now() - t)
+      if (left > 0) await new Promise((r) => setTimeout(r, left))
+    }
     fetchPublicInvitation(slug)
-      .then((inv) => !cancelled && setState(inv ? { kind: 'ok', inv } : { kind: 'missing' }))
+      .then(async (inv) => {
+        await waitShown()
+        if (!cancelled) setState(inv ? { kind: 'ok', inv } : { kind: 'missing' })
+      })
       .catch((e) => !cancelled && setState({ kind: 'error', message: errorMessage(e) }))
     return () => {
       cancelled = true
