@@ -272,6 +272,17 @@ export function defaultContent(): InvitationContent {
       buttonText: '모바일 청첩장 보기',
     },
     maps: { kakaoJsKey: '' },
+    rsvp: {
+      enabled: false, // SQL 실행 후 관리자 ‘참석 회신’에서 켜기
+      title: '참석 여부를 알려주세요',
+      description: '원활한 예식 준비를 위해\n참석 여부를 미리 알려주시면 감사하겠습니다.',
+      askSide: true,
+      askPartySize: true,
+      askMeal: true,
+      attendMessage: '함께해 주셔서 감사합니다.\n그날 기쁜 마음으로 기다리고 있을게요.',
+      declineMessage: '마음만으로도 큰 축복이에요.\n보내주신 마음 감사히 간직하겠습니다.',
+      deadline: '',
+    },
     sections: (
       ['envelope', 'main', 'story', 'calendar', 'gallery', 'location', 'gratitude', 'guestbook', 'photographer', 'thankyou'] as SectionType[]
     ).map((t) => createSection(t)),

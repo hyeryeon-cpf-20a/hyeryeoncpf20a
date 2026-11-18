@@ -126,6 +126,7 @@ export function errorMessage(e: unknown): string {
     'Payload too large': '파일 용량이 너무 커요.',
   }
   for (const k of Object.keys(map)) if (raw.includes(k)) return map[k]
+  if (/submit_rsvp|PGRST202/i.test(raw)) return '참석 회신 기능이 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요.'
   if (/mime type/i.test(raw)) return '지원하지 않는 이미지 형식이에요.'
   if (/exceeded the maximum allowed size|too large/i.test(raw)) return '파일 용량이 너무 커요.'
   if (/Failed to fetch|NetworkError|Load failed/i.test(raw)) return '네트워크 연결을 확인해 주세요.'

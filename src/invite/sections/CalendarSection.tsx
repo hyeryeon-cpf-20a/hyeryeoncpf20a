@@ -3,6 +3,8 @@ import { calendarMatrix, formatKoDate, formatKoTime, monthNameEn, parseWedding }
 import { useInvite } from '../context'
 import { Reveal } from '../ui/Reveal'
 import { SectionShell } from '../SectionShell'
+import { openRsvp } from '../RsvpModal'
+import { isBackendConfigured } from '../../lib/supabase'
 
 const DAYS_SUN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const DAYS_MON = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
@@ -120,6 +122,13 @@ export function CalendarSection({ section, selected }: { section: SectionOf<'cal
           </p>
         )}
       </Reveal>
+      {content.rsvp.enabled && isBackendConfigured && (
+        <Reveal delay={0.4} className="mt-8">
+          <button type="button" className="tap btn-primary inline-flex items-center gap-2 !px-6" onClick={openRsvp}>
+            참석 여부 전달하기
+          </button>
+        </Reveal>
+      )}
     </SectionShell>
   )
 }

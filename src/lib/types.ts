@@ -260,6 +260,18 @@ export interface Theme {
   letterSpacing: number // em
 }
 
+export interface RsvpSettings {
+  enabled: boolean // 봉투가 열린 뒤 참석 여부 팝업 띄우기
+  title: string
+  description: string
+  askSide: boolean
+  askPartySize: boolean
+  askMeal: boolean
+  attendMessage: string // 참석 회신 후 문구
+  declineMessage: string // 불참 회신 후 문구
+  deadline: string // 회신 마감 안내 (선택)
+}
+
 export interface InvitationContent {
   schemaVersion: 1
   theme: Theme
@@ -293,6 +305,7 @@ export interface InvitationContent {
   maps: {
     kakaoJsKey: string
   }
+  rsvp: RsvpSettings
   sections: Section[]
 }
 

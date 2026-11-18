@@ -15,9 +15,10 @@ import { VersionsPanel } from './VersionsPanel'
 import { SettingsPanel } from './SettingsPanel'
 import { Btn } from './ui'
 import { VersionManager } from './VersionManager'
+import { RsvpManager } from './RsvpManager'
 import type { PreviewMessage } from '../invite/PreviewPage'
 
-type View = 'edit' | 'guestbook' | 'photos' | 'share' | 'versions' | 'settings' | 'media'
+type View = 'edit' | 'rsvp' | 'guestbook' | 'photos' | 'share' | 'versions' | 'settings' | 'media'
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error'
 
 const DEVICES = [
@@ -295,6 +296,7 @@ export function Editor({
 
   const NAV: { id: View; label: string }[] = [
     { id: 'edit', label: '편집' },
+    { id: 'rsvp', label: '참석 회신' },
     { id: 'guestbook', label: '축하글' },
     { id: 'photos', label: '하객 사진' },
     { id: 'media', label: '이미지' },
@@ -477,6 +479,7 @@ export function Editor({
           </div>
         ) : (
           <main className="min-h-0 flex-1 overflow-y-auto">
+            {view === 'rsvp' && <RsvpManager dataId={inv.data_id} toast={toast} />}
             {view === 'guestbook' && <GuestbookManager invitationId={inv.data_id} flags={flags} setFlags={setFlags} toast={toast} />}
             {view === 'photos' && <PhotoManager invitationId={inv.data_id} flags={flags} setFlags={setFlags} toast={toast} />}
             {view === 'share' && <SharePanel published={inv.published} isPublished={inv.is_published} />}

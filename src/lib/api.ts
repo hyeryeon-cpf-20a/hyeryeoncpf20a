@@ -103,6 +103,70 @@ export async function uploadGuestPhoto(
   return res
 }
 
+// ------------------------------------------------------------------ 참석 여부 회신
+
+export interface RsvpInput {
+  slug: string
+  name: string
+  side: 'groom' | 'bride' | null
+  attending: boolean
+  partySize: number
+  meal: 'yes' | 'no' | 'undecided' | null
+  note?: string
+  id?: string
+  token?: string
+  honeypot?: string
+}
+
+export async function submitRsvp(i: RsvpInput): Promise<{ id: string; token: string }> {
+  const sb = requireClient()
+  return unwrap(
+    await sb.rpc('submit_rsvp', {
+      p_slug: i.slug,
+      p_name: i.name,
+      p_side: i.side,
+      p_attending: i.attending,
+      p_party_size: i.partySize,
+      p_meal: i.meal,
+      p_note: i.note || null,
+      p_id: i.id ?? null,
+      p_token: i.token ?? null,
+      p_honeypot: i.honeypot || null,
+    }),
+  )
+}
+
+export interface RsvpRow {
+  id: string
+  name: string
+  side: 'groom' | 'bride' | null
+  attending: boolean
+  party_size: number
+  meal: 'yes' | 'no' | 'undecided' | null
+  note: string | null
+  version_slug: string | null
+  created_at: string
+  updated_at: string
+}
+
+export async function adminListRsvps(dataId: string): Promise<RsvpRow[]> {
+  const sb = requireClient()
+  return (
+    unwrap(
+      await sb
+        .from('rsvps')
+        .select('id, name, side, attending, party_size, meal, note, version_slug, created_at, updated_at')
+        .eq('invitation_id', dataId)
+        .order('updated_at', { ascending: false }),
+    ) ?? []
+  )
+}
+
+export async function adminDeleteRsvps(ids: string[]) {
+  const sb = requireClient()
+  unwrap(await sb.from('rsvps').delete().in('id', ids).select('id'))
+}
+
 // ------------------------------------------------------------------ admin (관리자)
 
 export interface AdminInvitation {

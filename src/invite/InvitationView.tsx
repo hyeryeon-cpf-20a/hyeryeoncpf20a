@@ -4,6 +4,8 @@ import type { InvitationContent, RuntimeFlags, Section, SectionOf } from '../lib
 import { fontStack, loadFonts } from '../lib/fonts'
 import { prefersReducedMotion, safeStorage } from '../lib/util'
 import { InviteProvider } from './context'
+import { RsvpModal, OPEN_RSVP_EVENT } from './RsvpModal'
+import { isBackendConfigured } from '../lib/supabase'
 import { Envelope } from './Envelope'
 import { SideNav } from './SideNav'
 import { MainSection } from './sections/MainSection'
@@ -131,6 +133,21 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.envelopeKey, options.skipEnvelope, !!envelope])
 
+  // 참석 여부 팝업: 봉투가 열린 뒤(봉투가 없으면 처음 열 때) 자동으로, 버튼으로 다시 열기
+  const rsvpOn = content.rsvp.enabled && isBackendConfigured
+  const [rsvpOpen, setRsvpOpen] = useState(false)
+  useEffect(() => {
+    const fn = () => setRsvpOpen(true)
+    window.addEventListener(OPEN_RSVP_EVENT, fn)
+    return () => window.removeEventListener(OPEN_RSVP_EVENT, fn)
+  }, [])
+  useEffect(() => {
+    if (!rsvpOn || flags.preview || initiallyClosed()) return
+    const t = setTimeout(() => setRsvpOpen(true), 1200)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const visible = useMemo(() => content.sections.filter((s) => !s.hidden && s.type !== 'envelope'), [content.sections])
 
   return (
@@ -173,6 +190,7 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
           cardSection={visible[0]?.type === 'main' ? (visible[0] as SectionOf<'main'>) : undefined}
           onReveal={() => setReady(true)}
           onOpened={() => {
+            if (rsvpOn) setTimeout(() => setRsvpOpen(true), 700)
             safeStorage().set(storeKey, '1')
             pageY.set(0)
             setEnvOpen(false)
@@ -180,6 +198,7 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
           }}
         />
       )}
+      {rsvpOn && <RsvpModal open={rsvpOpen} onClose={() => setRsvpOpen(false)} />}
     </InviteProvider>
   )
 }
