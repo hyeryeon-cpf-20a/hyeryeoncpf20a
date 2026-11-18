@@ -186,7 +186,7 @@ export function Envelope({ section, onOpened, onReveal, pageY, cardSection }: Pr
     <motion.div
       ref={root}
       className="fixed inset-0 z-[60] overflow-hidden"
-      style={{ touchAction: 'manipulation', cursor: 'pointer', WebkitTapHighlightColor: 'transparent', userSelect: 'none', WebkitUserSelect: 'none' }}
+      style={{ touchAction: 'none', cursor: 'pointer', WebkitTapHighlightColor: 'transparent', userSelect: 'none', WebkitUserSelect: 'none' }}
       initial={motionOn ? { opacity: 0 } : false}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}

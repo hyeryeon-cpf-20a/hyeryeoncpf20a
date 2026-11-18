@@ -93,6 +93,26 @@ export function InvitationView({ content, flags, options = {} }: { content: Invi
 
   useEffect(() => applyTheme(content), [content])
 
+  // 청첩장 화면 확대 막기 (배율 1배 고정 + 아이폰 사파리의 두 손가락 확대 차단)
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="viewport"]')
+    const prev = meta?.getAttribute('content')
+    meta?.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover')
+    const stop = (e: Event) => e.preventDefault()
+    const multiTouch = (e: TouchEvent) => {
+      if (e.touches.length > 1) e.preventDefault()
+    }
+    document.addEventListener('gesturestart', stop, { passive: false })
+    document.addEventListener('gesturechange', stop, { passive: false })
+    document.addEventListener('touchmove', multiTouch, { passive: false })
+    return () => {
+      if (prev) meta?.setAttribute('content', prev)
+      document.removeEventListener('gesturestart', stop)
+      document.removeEventListener('gesturechange', stop)
+      document.removeEventListener('touchmove', multiTouch)
+    }
+  }, [])
+
   // 화면 높이를 한 번만 재서 고정 (휴대폰 주소창이 접혔다 펴져도 섹션·사진 크기가 바뀌지 않게).
   // 가로 폭이 바뀔 때(휴대폰을 돌릴 때)만 다시 잽니다.
   useEffect(() => {

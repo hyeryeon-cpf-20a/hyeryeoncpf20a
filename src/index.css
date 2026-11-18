@@ -50,11 +50,11 @@ body {
 /* 청첩장 화면에서는 스크롤 막대를 숨김 (스크롤은 그대로 동작) */
 html.invite-doc {
   scrollbar-width: none;
-  /* 두 번 탭 확대 끄기 (두 손가락 확대는 그대로) — 봉투를 연달아 탭해도 화면이 커지지 않게 */
-  touch-action: manipulation;
+  /* 청첩장은 확대하지 않음: 스크롤(상하좌우 밀기)만 허용, 두 손가락·두 번 탭 확대는 막음 */
+  touch-action: pan-x pan-y;
 }
 html.invite-doc body {
-  touch-action: manipulation;
+  touch-action: pan-x pan-y;
 }
 html.invite-doc::-webkit-scrollbar,
 html.invite-doc body::-webkit-scrollbar {
