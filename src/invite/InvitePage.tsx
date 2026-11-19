@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { fetchPublicInvitation } from '../lib/api'
 import { isBackendConfigured } from '../lib/supabase'
-import { DEFAULT_SLUG, defaultContent } from '../lib/defaults'
+import { DEFAULT_SLUG, defaultContent, eventContent } from '../lib/defaults'
 import type { PublicInvitation, RuntimeFlags } from '../lib/types'
 import { errorMessage } from '../lib/util'
 import { InvitationView } from './InvitationView'
@@ -139,7 +139,7 @@ export default function InvitePage() {
         >
           서버(Supabase)가 연결되지 않은 데모 화면이에요 · 축하글/사진 저장이 비활성화되어 있어요
         </div>
-        <InvitationView content={defaultContent()} flags={flags} />
+        <InvitationView content={/event/.test(slug) ? eventContent() : defaultContent()} flags={flags} />
       </>
     )
   }

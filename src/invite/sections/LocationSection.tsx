@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { SectionOf } from '../../lib/types'
-import { copyText } from '../../lib/util'
 import { useInvite } from '../context'
 import { Accordion } from '../ui/Accordion'
+import { MapButtons } from '../ui/MapButtons'
 import { Img } from '../ui/Img'
 import { Reveal } from '../ui/Reveal'
 import { Body, SectionShell, SectionTitle } from '../SectionShell'
@@ -77,18 +77,11 @@ function OsmMap({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) 
 }
 
 export function LocationSection({ section, selected }: { section: SectionOf<'location'>; selected?: boolean }) {
-  const { content, toast } = useInvite()
+  const { content } = useInvite()
   const s = section.settings
   const [kakaoFailed, setKakaoFailed] = useState(false)
   const hasCoords = typeof s.lat === 'number' && typeof s.lng === 'number' && !Number.isNaN(s.lat) && !Number.isNaN(s.lng)
   const name = [s.venueName, s.hallName].filter(Boolean).join(' ')
-  const kakaoUrl = hasCoords
-    ? `https://map.kakao.com/link/map/${encodeURIComponent(s.venueName || '예식장')},${s.lat},${s.lng}`
-    : `https://map.kakao.com/link/search/${encodeURIComponent(s.address)}`
-  const naverUrl = `https://map.naver.com/p/search/${encodeURIComponent(s.address || s.venueName)}`
-  const tmapUrl = hasCoords
-    ? `tmap://route?goalname=${encodeURIComponent(s.venueName)}&goalx=${s.lng}&goaly=${s.lat}`
-    : ''
   const kakaoKey = content.maps.kakaoJsKey?.trim()
 
   return (
@@ -128,32 +121,9 @@ export function LocationSection({ section, selected }: { section: SectionOf<'loc
             )}
           </Reveal>
         )}
-        <Reveal delay={0.18} className="mt-4 grid grid-cols-3 gap-2 text-[0.8rem]">
-          <a className="tap soft-card flex min-h-[46px] items-center justify-center gap-1.5 px-2" href={kakaoUrl} target="_blank" rel="noreferrer">
-            <span className="h-2 w-2 rounded-full" style={{ background: '#F2C94C' }} /> 카카오맵
-          </a>
-          <a className="tap soft-card flex min-h-[46px] items-center justify-center gap-1.5 px-2" href={naverUrl} target="_blank" rel="noreferrer">
-            <span className="h-2 w-2 rounded-full" style={{ background: '#5BB974' }} /> 네이버지도
-          </a>
-          <button
-            type="button"
-            className="tap soft-card flex min-h-[46px] items-center justify-center gap-1.5 px-2"
-            onClick={async () => toast((await copyText(s.address)) ? '주소가 복사되었어요' : '복사에 실패했어요')}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="9" y="9" width="12" height="12" rx="2" />
-              <path d="M5 15V5a2 2 0 0 1 2-2h8" />
-            </svg>
-            주소 복사
-          </button>
+        <Reveal delay={0.18} className="mt-4">
+          <MapButtons place={{ name: s.venueName, address: s.address, lat: s.lat, lng: s.lng }} />
         </Reveal>
-        {tmapUrl && (
-          <Reveal delay={0.2} className="mt-2">
-            <a className="text-[0.74rem] underline underline-offset-4" style={{ color: 'var(--c-muted)' }} href={tmapUrl}>
-              티맵으로 길찾기
-            </a>
-          </Reveal>
-        )}
       </div>
 
       {/* 하단: 식사 및 추가 안내 */}

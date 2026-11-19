@@ -97,7 +97,7 @@ export function ThemePanel() {
         <p className="text-[11px] text-stone-400">색상, 봉투 모양, 실링왁스·진주, 달력 강조색이 한 번에 바뀌어요. 아래에서 하나씩 더 바꿀 수 있어요.</p>
       </Group>
 
-      <Group title="결혼식 일시">
+      <Group title="날짜 · 시간 (결혼식 · 행사)">
         <div className="grid grid-cols-2 gap-2">
           <Field label="날짜">
             <input

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { createVersion, deleteVersion, listInvitationGroup, renameVersion, type VersionInfo } from '../lib/api'
+import { createVersion, deleteVersion, listInvitationGroup, renameVersion, saveDraft, type VersionInfo } from '../lib/api'
+import { eventContent } from '../lib/defaults'
 import { inviteUrl } from '../lib/share'
 import { copyText, errorMessage } from '../lib/util'
 import { Btn, Modal } from './ui'
@@ -31,6 +32,7 @@ export function VersionManager({
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [busy, setBusy] = useState(false)
+  const [template, setTemplate] = useState<'copy' | 'event'>('copy')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -54,6 +56,8 @@ export function VersionManager({
     setBusy(true)
     try {
       const r = await createVersion(currentId, name.trim(), slug.trim().toLowerCase())
+      // 행사 초대장 템플릿: 새 버전의 초안을 행사용 기본 내용으로 바꿔서 시작
+      if (template === 'event') await saveDraft(r.id, eventContent())
       toast(`'${name || r.slug}' 버전을 만들었어요`)
       setName('')
       setSlug('')
@@ -151,11 +155,28 @@ export function VersionManager({
         {!needsSql && (
           <div className="rounded-xl border border-dashed border-stone-300 p-4">
             <p className="text-[13px] font-semibold text-stone-800">새 버전 만들기</p>
-            <p className="mt-0.5 text-[11.5px] text-stone-400">지금 편집 중인 ‘{currentName}’의 내용을 그대로 복사해서 시작해요.</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  ['copy', '지금 내용 복사', `편집 중인 ‘${currentName}’을 그대로 복사해서 시작해요.`],
+                  ['event', '행사 초대장 템플릿', '준공식·기념식처럼 첫 화면 → 초대 글 → 행사 상세안내(4칸) · 오시는 길로 시작해요. 방명록 없음.'],
+                ] as const
+              ).map(([v, title, desc]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setTemplate(v)}
+                  className={`rounded-lg border p-3 text-left ${template === v ? 'border-[#B8A489] bg-[#F4F0E8]' : 'border-stone-200 bg-white hover:bg-stone-50'}`}
+                >
+                  <span className="block text-[12.5px] font-semibold text-stone-800">{title}</span>
+                  <span className="mt-0.5 block text-[11px] leading-relaxed text-stone-500">{desc}</span>
+                </button>
+              ))}
+            </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
               <input
                 className="rounded-lg border border-stone-200 px-3 py-2 text-[13px]"
-                placeholder="이름 (예: 회사 동료용)"
+                placeholder={template === 'event' ? '이름 (예: G6 준공식)' : '이름 (예: 회사 동료용)'}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />

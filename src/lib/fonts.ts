@@ -24,6 +24,7 @@ export const SERIF_FONTS: FontOption[] = [
   { family: 'Playfair Display', label: 'Playfair Display', css: g('Playfair+Display:ital,wght@0,400;0,500;1,400'), fallback: 'serif' },
   { family: 'EB Garamond', label: 'EB Garamond', css: g('EB+Garamond:ital,wght@0,400;0,500;1,400'), fallback: 'serif' },
   { family: 'Libre Baskerville', label: 'Libre Baskerville', css: g('Libre+Baskerville:ital,wght@0,400;1,400'), fallback: 'serif' },
+  { family: 'Tinos', label: 'Tinos (Times 계열 · 굵은 기울임)', css: g('Tinos:ital,wght@0,400;0,700;1,400;1,700'), fallback: "'Times New Roman', serif" },
   { family: 'Bodoni Moda', label: 'Bodoni Moda', css: g('Bodoni+Moda:ital,wght@0,400;0,500;1,400'), fallback: 'serif' },
 ]
 

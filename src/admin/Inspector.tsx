@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import type {
   Account,
   Aspect,
+  EventTab,
+  ProgramItem,
   InfoItem,
   PersonProfile,
   Section,
@@ -10,7 +12,7 @@ import type {
   SectionType,
   SettingsOf,
 } from '../lib/types'
-import { PALETTE, SECTION_META } from '../lib/defaults'
+import { defaultEventTabs, PALETTE, SECTION_META } from '../lib/defaults'
 import { imageSrc } from '../lib/image'
 import { uid } from '../lib/util'
 import { useEditor } from './EditorContext'
@@ -508,7 +510,7 @@ function LocationEditor({ id }: { id: string }) {
         <TitleFields s={s} set={set as never} />
         <TextInput label="예식장 이름" value={s.venueName} onChange={(v) => set((x) => void (x.venueName = v))} />
         <TextInput label="홀 이름" value={s.hallName} onChange={(v) => set((x) => void (x.hallName = v))} />
-        <TextInput label="전체 주소" value={s.address} onChange={(v) => set((x) => void (x.address = v))} />
+        <TextInput label="전체 주소" value={s.address} onChange={(v) => set((x) => void (x.address = v))} hint="주소만 넣으면 네이버지도 · 카카오맵 · 티맵 길찾기 버튼이 자동으로 연결돼요." />
         <TextInput label="전화번호 (선택)" value={s.tel} onChange={(v) => set((x) => void (x.tel = v))} />
       </Group>
       <Group title="지도">
@@ -525,7 +527,7 @@ function LocationEditor({ id }: { id: string }) {
           label="카카오맵 JavaScript 키 (선택)"
           value={draft.maps.kakaoJsKey}
           onChange={(v) => update((d) => void (d.maps.kakaoJsKey = v.trim()))}
-          hint="입력하면 카카오 지도로 표시돼요 (developers.kakao.com 에서 사이트 도메인 등록 필요). 비워 두면 OpenStreetMap 지도가 표시됩니다. 카카오맵·네이버지도 열기 버튼은 항상 표시돼요."
+          hint="입력하면 카카오 지도로 표시돼요 (developers.kakao.com 에서 사이트 도메인 등록 필요). 비워 두면 OpenStreetMap 지도가 표시됩니다. 네이버지도·카카오맵·티맵 길찾기 버튼은 키 없이 주소만으로 항상 동작해요."
         />
       </Group>
       <Group
@@ -700,6 +702,242 @@ function GreetingEditor({ id }: { id: string }) {
   )
 }
 
+
+// ------------------------------------------------------------------ 행사 초대장
+
+function HeroEditor({ id }: { id: string }) {
+  const { s, set } = useSection<'hero'>(id)
+  return (
+    <>
+      <Group title="글자">
+        <TextInput label="브랜드 (맨 위 기울임 글씨)" value={s.brand} onChange={(v) => set((x) => void (x.brand = v))} />
+        <Segmented
+          label="브랜드 글꼴"
+          value={s.brandFont}
+          onChange={(v) => set((x) => void (x.brandFont = v))}
+          options={[
+            { value: 'serif', label: '굵은 기울임' },
+            { value: 'script', label: '필기체' },
+            { value: 'sans', label: '고딕' },
+          ]}
+        />
+        <TextArea label="큰 제목" value={s.title} rows={3} onChange={(v) => set((x) => void (x.title = v))} hint="줄바꿈한 그대로 보여요." />
+        <Slider label="큰 제목 크기" min={1.4} max={3.4} step={0.05} value={s.titleSize} onChange={(v) => set((x) => void (x.titleSize = v))} format={(n) => `${n.toFixed(2)}rem`} />
+        <TextArea label="부제 (한글)" value={s.subtitle} rows={2} onChange={(v) => set((x) => void (x.subtitle = v))} />
+        <ColorInput label="부제 색" value={s.subtitleColor} onChange={(v) => set((x) => void (x.subtitleColor = v))} presets={['#7FCB9E', '#6CBC96', '#FFFFFF', '#E9D9A8', '#B7BDDF']} />
+      </Group>
+      <Group title="배경 그림">
+        <ImageField label="배경 그림 (가로 사진 권장)" value={s.bgImage} aspect="4:3" onChange={(v) => set((x) => void (x.bgImage = v))} />
+        <Slider label="어둡게" min={0} max={0.7} step={0.05} value={s.overlay} onChange={(v) => set((x) => void (x.overlay = v))} format={(n) => (n === 0 ? '없음' : `${Math.round(n * 100)}%`)} />
+        <Slider label="첫 화면 높이" min={36} max={100} value={s.height} onChange={(v) => set((x) => void (x.height = v))} format={(n) => `화면의 ${n}%`} />
+        <p className="text-[11px] text-stone-400">배경 그림 아래쪽은 ‘기본 정보 · 전체 디자인’의 바탕색으로 자연스럽게 이어져요. 같은 그림이 상세 페이지 위쪽에도 나와요.</p>
+      </Group>
+    </>
+  )
+}
+
+function LetterEditor({ id }: { id: string }) {
+  const { s, set } = useSection<'letter'>(id)
+  return (
+    <Group title="초대 글 카드">
+      <TextInput label="영문 제목" value={s.eyebrow} onChange={(v) => set((x) => void (x.eyebrow = v))} />
+      <TextArea label="초대 글" value={s.body} rows={11} onChange={(v) => set((x) => void (x.body = v))} hint="빈 줄을 넣으면 문단이 나뉘어요." />
+      <Toggle label="반투명 상자로 감싸기" checked={s.boxed} onChange={(v) => set((x) => void (x.boxed = v))} />
+    </Group>
+  )
+}
+
+const ICONS: { value: EventTab['icon']; label: string }[] = [
+  { value: 'calendar', label: '달력' },
+  { value: 'clock', label: '시계' },
+  { value: 'seat', label: '좌석' },
+  { value: 'meal', label: '식사' },
+  { value: 'pin', label: '위치' },
+  { value: 'info', label: '안내' },
+]
+
+function ProgramItemsEditor({ items, onChange, addLabel }: { items: ProgramItem[]; onChange: (next: ProgramItem[]) => void; addLabel: string }) {
+  const patch = (id: string, k: keyof ProgramItem, v: string) => onChange(items.map((a) => (a.id === id ? { ...a, [k]: v } : a)))
+  return (
+    <div className="space-y-2">
+      <SortableList
+        items={items}
+        onReorder={onChange}
+        className="space-y-1.5"
+        render={(it, _i, handle) => (
+          <div className="rounded-lg bg-white p-1.5 ring-1 ring-stone-200">
+            <div className="flex items-center gap-1">
+              {handle}
+              <input className="w-[38%] min-w-0 rounded-md border border-stone-200 px-2 py-1 text-[12px]" value={it.time} placeholder="09:30 ~ 10:00" onChange={(e) => patch(it.id, 'time', e.target.value)} />
+              <input className="min-w-0 flex-1 rounded-md border border-stone-200 px-2 py-1 text-[12px] font-semibold" value={it.title} placeholder="제목" onChange={(e) => patch(it.id, 'title', e.target.value)} />
+              <button type="button" className="rounded p-1 text-stone-400 hover:text-red-600" onClick={() => onChange(items.filter((x) => x.id !== it.id))} title="삭제">
+                {Icon.trash}
+              </button>
+            </div>
+            <input className="mt-1 w-full rounded-md border border-stone-200 px-2 py-1 text-[12px]" value={it.desc} placeholder="설명 (선택)" onChange={(e) => patch(it.id, 'desc', e.target.value)} />
+          </div>
+        )}
+      />
+      <Btn onClick={() => onChange([...items, { id: uid(), time: '', title: '', desc: '' }])}>
+        {Icon.plus} {addLabel}
+      </Btn>
+    </div>
+  )
+}
+
+function EventTabEditor({ tab, onChange, onRemove, handle }: { tab: EventTab; onChange: (fn: (t: EventTab) => void) => void; onRemove: () => void; handle: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const kindName = tab.kind === 'schedule' ? '일시/장소' : tab.kind === 'program' ? '시간표' : '사진 + 글'
+  return (
+    <div className="rounded-lg bg-stone-50">
+      <div className="flex items-center gap-1 p-1.5">
+        {handle}
+        <button type="button" className="min-w-0 flex-1 truncate text-left text-[12.5px] text-stone-700" onClick={() => setOpen((o) => !o)}>
+          {tab.label || '(이름 없음)'} <span className="text-[10.5px] text-stone-400">· {kindName}</span>
+        </button>
+        <button type="button" className="rounded p-1 text-stone-400" onClick={() => setOpen((o) => !o)}>
+          {open ? Icon.up : Icon.down}
+        </button>
+        <button type="button" className="rounded p-1 text-stone-400 hover:text-red-600" onClick={onRemove} title="삭제">
+          {Icon.trash}
+        </button>
+      </div>
+      {open && (
+        <div className="space-y-3 border-t border-stone-200/70 p-3">
+          <TextInput label="버튼 이름" value={tab.label} onChange={(v) => onChange((x) => void (x.label = v))} maxLength={16} />
+          <Segmented
+            label="종류"
+            value={tab.kind}
+            onChange={(v) => onChange((x) => void (x.kind = v))}
+            options={[
+              { value: 'schedule', label: '일시/장소' },
+              { value: 'program', label: '시간표' },
+              { value: 'content', label: '사진 + 글' },
+            ]}
+          />
+          {tab.kind === 'schedule' ? (
+            <>
+              <p className="rounded-lg bg-white px-3 py-2 text-[11.5px] leading-relaxed text-stone-500">
+                날짜·시간·장소·주소는 아래 <b>‘일시 · 장소’</b> 칸에서 한 번만 입력하면 여기와 ‘오시는 길’에 함께 나와요.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <TextInput label="일시 제목" value={tab.dateLabel} onChange={(v) => onChange((x) => void (x.dateLabel = v))} />
+                <TextInput label="장소 제목" value={tab.placeLabel} onChange={(v) => onChange((x) => void (x.placeLabel = v))} />
+                <TextInput label="주소 제목" value={tab.addressLabel} onChange={(v) => onChange((x) => void (x.addressLabel = v))} />
+              </div>
+              <TextInput label="길찾기 제목" value={tab.moreLabel} onChange={(v) => onChange((x) => void (x.moreLabel = v))} />
+              <TextInput label="길찾기 설명" value={tab.moreText} onChange={(v) => onChange((x) => void (x.moreText = v))} />
+              <ImageField label="주소 아래 사진 (선택 · 약도 캡처 등)" value={tab.image} aspect={tab.aspect} onChange={(v) => onChange((x) => void (x.image = v))} onAspectChange={(a) => onChange((x) => void (x.aspect = a))} />
+              <TextArea label="추가 안내 글 (선택)" value={tab.body} rows={3} onChange={(v) => onChange((x) => void (x.body = v))} />
+            </>
+          ) : (
+            <>
+              <Toggle label="맨 위 아이콘 표시" checked={tab.showIcon} onChange={(v) => onChange((x) => void (x.showIcon = v))} />
+              {tab.showIcon && <Select label="아이콘" value={tab.icon} onChange={(v) => onChange((x) => void (x.icon = v))} options={ICONS} />}
+              <TextArea label="안내 문장" value={tab.title} rows={2} onChange={(v) => onChange((x) => void (x.title = v))} />
+              <ImageField
+                label={tab.kind === 'program' ? '사진 (선택)' : '사진 (좌석배치도 · 메뉴 등)'}
+                value={tab.image}
+                aspect={tab.aspect}
+                onChange={(v) => onChange((x) => void (x.image = v))}
+                onAspectChange={(a) => onChange((x) => void (x.aspect = a))}
+              />
+              {tab.image && <Select label="사진 비율" value={tab.aspect} onChange={(v) => onChange((x) => void (x.aspect = v))} options={ASPECTS} />}
+              <p className="text-[11px] text-stone-400">하객이 사진을 누르면 크게 확대해서 볼 수 있어요.</p>
+              <TextArea label="글" value={tab.body} rows={4} onChange={(v) => onChange((x) => void (x.body = v))} hint="줄바꿈한 그대로 보여요." />
+              <div>
+                <span className="mb-1.5 block text-[12px] font-medium text-stone-500">{tab.kind === 'program' ? '시간표' : '목록 (선택 · 메뉴 등)'}</span>
+                <ProgramItemsEditor items={tab.items} onChange={(n) => onChange((x) => void (x.items = n))} addLabel={tab.kind === 'program' ? '순서 추가' : '항목 추가'} />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EventEditor({ id }: { id: string }) {
+  const { s, set } = useSection<'event'>(id)
+  const { draft } = useEditor()
+  return (
+    <>
+      <Group
+        title="행사 상세 안내 · 버튼"
+        action={
+          <Btn
+            onClick={() =>
+              set((x) => {
+                const t = defaultEventTabs()[3]
+                x.tabs.push({ ...t, id: uid(), label: '새 안내', title: '', body: '' })
+              })
+            }
+          >
+            {Icon.plus} 버튼 추가
+          </Btn>
+        }
+      >
+        <TextInput label="제목" value={s.title} onChange={(v) => set((x) => void (x.title = v))} />
+        <TextArea label="설명" value={s.description} rows={2} onChange={(v) => set((x) => void (x.description = v))} />
+        <Segmented
+          label="버튼 모양"
+          value={s.buttonStyle}
+          onChange={(v) => set((x) => void (x.buttonStyle = v))}
+          options={[
+            { value: 'mixed', label: '테두리 + 채움' },
+            { value: 'filled', label: '모두 채움' },
+            { value: 'outline', label: '모두 테두리' },
+          ]}
+        />
+        <p className="text-[11px] text-stone-400">버튼은 2칸씩 배치돼요. 누르면 상세 페이지가 열려요 (미리보기에서도 눌러 볼 수 있어요).</p>
+        <SortableList
+          items={s.tabs}
+          onReorder={(next) => set((x) => void (x.tabs = next))}
+          className="space-y-2"
+          render={(tab, _i, handle) => (
+            <EventTabEditor
+              tab={tab}
+              handle={handle}
+              onChange={(fn) => set((x) => fn(x.tabs.find((y) => y.id === tab.id)!))}
+              onRemove={() => confirm(`'${tab.label}' 버튼을 삭제할까요?`) && set((x) => void (x.tabs = x.tabs.filter((y) => y.id !== tab.id)))}
+            />
+          )}
+        />
+      </Group>
+      <Group title="일시 · 장소">
+        <p className="rounded-lg bg-stone-50 px-3 py-2 text-[11.5px] leading-relaxed text-stone-500">
+          날짜는 <b>기본 정보 · 전체 디자인</b>의 날짜({draft.wedding.date})를 그대로 써요. 다르게 쓰고 싶을 때만 아래에 직접 입력하세요.
+        </p>
+        <TextInput label="날짜 글 (비우면 자동)" value={s.dateText} placeholder="2026년 10월 19일 월요일" onChange={(v) => set((x) => void (x.dateText = v))} />
+        <TextInput label="시간 글 (비우면 자동)" value={s.timeText} placeholder="오전 10시 ~ 오전 11시" onChange={(v) => set((x) => void (x.timeText = v))} />
+        <TextInput label="장소 이름" value={s.venueName} onChange={(v) => set((x) => void (x.venueName = v))} />
+        <TextInput
+          label="주소"
+          value={s.address}
+          placeholder="예: 강원특별자치도 강릉시 …"
+          onChange={(v) => set((x) => void (x.address = v))}
+          hint="주소만 넣으면 네이버지도 · 카카오맵 · 티맵 길찾기 버튼이 자동으로 연결돼요. 휴대폰에서는 앱이 바로 열리고, 앱이 없으면 웹 지도(티맵은 설치 화면)로 넘어가요."
+        />
+      </Group>
+      <Group title="오시는 길">
+        <Toggle label="길찾기 버튼 표시" checked={s.showDirections} onChange={(v) => set((x) => void (x.showDirections = v))} />
+        <TextInput label="제목" value={s.mapTitle} onChange={(v) => set((x) => void (x.mapTitle = v))} />
+        <TextInput label="설명" value={s.mapDescription} onChange={(v) => set((x) => void (x.mapDescription = v))} />
+      </Group>
+      <Group title="카드 · 맨 아래 로고">
+        <div className="grid grid-cols-2 gap-2">
+          <ColorInput label="카드 색" value={s.cardColor} onChange={(v) => set((x) => void (x.cardColor = v))} presets={['#FFFFFF', '#F7F7F5', '#F4F0E8']} />
+          <ColorInput label="카드 글자색" value={s.cardTextColor} onChange={(v) => set((x) => void (x.cardTextColor = v))} presets={['#1A1A1A', '#333333', '#514A43']} />
+        </div>
+        <TextInput label="맨 아래 글자 로고" value={s.footerText} onChange={(v) => set((x) => void (x.footerText = v))} />
+        <ColorInput label="글자 로고 색" value={s.footerColor} onChange={(v) => set((x) => void (x.footerColor = v))} presets={['#1F3C98', '#151C5C', '#6CBC96']} />
+        <ImageField label="로고 이미지 (넣으면 글자 대신 표시)" value={s.footerImage} aspect="original" onChange={(v) => set((x) => void (x.footerImage = v))} />
+        <p className="text-[11px] text-stone-400">버튼 · 강조 색은 ‘기본 정보 · 전체 디자인’의 포인트 색을 따라가요.</p>
+      </Group>
+    </>
+  )
+}
+
 const EDITORS: Record<SectionType, (p: { id: string }) => ReactNode> = {
   envelope: EnvelopeEditor,
   main: MainEditor,
@@ -713,6 +951,9 @@ const EDITORS: Record<SectionType, (p: { id: string }) => ReactNode> = {
   thankyou: ThankYouEditor,
   text: TextEditor,
   greeting: GreetingEditor,
+  hero: HeroEditor,
+  letter: LetterEditor,
+  event: EventEditor,
 }
 
 export function SectionInspector({ section }: { section: Section }) {

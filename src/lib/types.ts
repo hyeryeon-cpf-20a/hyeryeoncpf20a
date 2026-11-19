@@ -13,6 +13,9 @@ export type SectionType =
   | 'thankyou'
   | 'text'
   | 'greeting'
+  | 'event'
+  | 'hero'
+  | 'letter'
 
 export type Aspect = 'original' | '1:1' | '4:5' | '3:4' | '2:3' | '3:5' | '9:16' | '4:3' | '3:2' | '16:9'
 
@@ -222,6 +225,83 @@ export interface GreetingSettings {
   caption: string // 사진 아래 문구 (선택)
 }
 
+/** 식순 등 탭 안의 목록 한 줄 (시간 · 제목 · 설명) */
+export interface ProgramItem {
+  id: string
+  time: string
+  title: string
+  desc: string
+}
+
+/**
+ * 행사 상세안내의 버튼 한 칸 = 눌렀을 때 열리는 상세 페이지 하나.
+ * schedule: 일시·장소·주소 + 길찾기 (날짜·주소는 자동으로 채워짐)
+ * program: 아이콘 + 안내 문장 + 시간표
+ * content: 제목 + 사진 + 글 (좌석배치도, 식사 안내 등)
+ */
+export interface EventTab {
+  id: string
+  kind: 'schedule' | 'program' | 'content'
+  label: string // 버튼 · 상세 페이지 위 알약에 보이는 이름
+  showIcon: boolean
+  icon: 'calendar' | 'clock' | 'seat' | 'meal' | 'pin' | 'info'
+  title: string
+  image: ImageRef | null
+  aspect: Aspect
+  body: string
+  items: ProgramItem[]
+  // schedule 전용 문구
+  dateLabel: string
+  placeLabel: string
+  addressLabel: string
+  moreLabel: string
+  moreText: string
+}
+
+export interface EventSettings {
+  title: string
+  description: string
+  tabs: EventTab[]
+  buttonStyle: 'mixed' | 'filled' | 'outline'
+  // 일시 (비우면 ‘기본 정보’의 날짜·시간으로 자동)
+  dateText: string
+  timeText: string
+  // 장소 · 오시는 길
+  venueName: string
+  address: string
+  lat: number | null
+  lng: number | null
+  showDirections: boolean
+  mapTitle: string
+  mapDescription: string
+  // 카드 · 맨 아래
+  cardColor: string
+  cardTextColor: string
+  footerText: string
+  footerImage: ImageRef | null
+  footerColor: string
+}
+
+/** 행사 첫 화면: 배경 그림 + 브랜드 · 제목 · 부제 */
+export interface HeroSettings {
+  brand: string
+  title: string
+  subtitle: string
+  bgImage: ImageRef | null
+  overlay: number // 0~1, 글씨가 잘 보이게 어둡게
+  brandFont: 'serif' | 'script' | 'sans'
+  titleSize: number // rem
+  height: number // 화면 높이 대비 % (상세 페이지 머리 높이도 같이 사용)
+  subtitleColor: string
+}
+
+/** 초대 글 카드 (INVITATION) */
+export interface LetterSettings {
+  eyebrow: string
+  body: string
+  boxed: boolean
+}
+
 export interface TextSettings {
   eyebrow: string
   title: string
@@ -243,6 +323,9 @@ export type Section =
   | SectionBase<'thankyou', ThankYouSettings>
   | SectionBase<'text', TextSettings>
   | SectionBase<'greeting', GreetingSettings>
+  | SectionBase<'event', EventSettings>
+  | SectionBase<'hero', HeroSettings>
+  | SectionBase<'letter', LetterSettings>
 
 export type SectionOf<T extends SectionType> = Extract<Section, { type: T }>
 export type SettingsOf<T extends SectionType> = SectionOf<T>['settings']
